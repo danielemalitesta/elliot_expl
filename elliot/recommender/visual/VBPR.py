@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from dataset.visual_loader_mixin import VisualLoader
-from recommender.BPRMF import BPRMF
+from recommender.traditional.BPRMF import BPRMF
 from recommender.attack.attack_visual_feature_mixin import AttackVisualFeature
 
 np.random.seed(0)

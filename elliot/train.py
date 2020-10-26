@@ -3,10 +3,10 @@ import os
 import shutil
 
 from dataset.dataset import DataLoader
-from recommender.APR import APR
-from recommender.BPRMF import BPRMF
+from recommender.attack.APR import APR
+from recommender.traditional.BPRMF import BPRMF
 from recommender.Random import Random
-from recommender.VBPR import VBPR
+from recommender.visual.VBPR import VBPR
 from utils.read import read_config
 
 
