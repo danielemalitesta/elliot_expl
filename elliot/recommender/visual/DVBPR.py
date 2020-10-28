@@ -22,13 +22,18 @@ logging.disable(logging.WARNING)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
-def _read_images_triple(batch):
-    user, pos, neg, dataset = batch
-    pos = pos[0]
-    neg = neg[0]
+def _read_images_triple(batch, dataset):
+    user, pos, neg = batch
+
     # load positive and negative item images
-    im_pos = Image.open(images_path.format(dataset) + str(pos) + '.jpg')
-    im_neg = Image.open(images_path.format(dataset) + str(neg) + '.jpg')
+    im_pos = Image.open(images_path.format(dataset.numpy().decode('utf-8')) + str(pos.numpy()) + '.jpg')
+    im_neg = Image.open(images_path.format(dataset.numpy().decode('utf-8')) + str(neg.numpy()) + '.jpg')
+
+    # pos = pos[0]
+    # neg = neg[0]
+    # load positive and negative item images
+    # im_pos = Image.open(images_path.format(dataset) + str(pos) + '.jpg')
+    # im_neg = Image.open(images_path.format(dataset) + str(neg) + '.jpg')
 
     try:
         im_pos.load()
@@ -134,17 +139,32 @@ class DVBPR(RecommenderModel, ABC):
             self.Phi[index, :] = phi
         return tf.tensordot(self.Tu, tf.Variable(self.Phi), axes=[[1], [1]])
 
-    def one_epoch(self, batches):
+    def one_epoch(self, all_triples):
         """
         Train recommender model for one epoch.
         Args:
-            batches: list of batches to train on
+            all_triples: list of all triples to train on
         Returns:
             average loss over epoch
         """
         loss = 0
         steps = 0
-        for batch in zip(*batches):
+
+        # data pipeline generation
+        def _load_func(p):
+            b = tf.py_function(_read_images_triple, (p, self.dataset_name,), (np.int32, np.float32, np.float32))
+            return b
+        data = tf.data.Dataset.from_tensor_slices(all_triples)
+        data = data.map(_load_func, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        data = data.batch(batch_size=self.batch_size)
+        data = data.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+        # for batch in zip(*all_triples):
+        #     steps += 1
+        #     loss += self.train_step(batch)
+        # return loss/steps
+
+        for batch in data:
             steps += 1
             loss += self.train_step(batch)
         return loss/steps
@@ -160,21 +180,25 @@ class DVBPR(RecommenderModel, ABC):
             loss value at the current batch
         """
         user_batch, pos_batch, neg_batch = batch
-        zip_batch = zip(user_batch, pos_batch, neg_batch, [self.dataset_name]*len(user_batch))
-        pool = Pool(cpu_count())
-        res = pool.map(_read_images_triple, zip_batch)
-        pool.close()
-        pool.join()
+        list_users = user_batch.numpy().tolist()
+        list_pos = pos_batch.numpy()
+        list_neg = neg_batch.numpy()
 
-        list_users, list_pos, list_neg = [], [], []
-        for r in res:
-            list_users.append(r[0])
-            list_pos.append(r[1])
-            list_neg.append(r[2])
-
-        list_users = np.array(list_users)
-        list_pos = np.array(list_pos)
-        list_neg = np.array(list_neg)
+        # zip_batch = zip(user_batch, pos_batch, neg_batch, [self.dataset_name]*len(user_batch))
+        # pool = Pool(cpu_count())
+        # res = pool.map(_read_images_triple, zip_batch)
+        # pool.close()
+        # pool.join()
+        #
+        # list_users, list_pos, list_neg = [], [], []
+        # for r in res:
+        #     list_users.append(r[0])
+        #     list_pos.append(r[1])
+        #     list_neg.append(r[2])
+        #
+        # list_users = np.array(list_users)
+        # list_pos = np.array(list_pos)
+        # list_neg = np.array(list_neg)
 
         with tf.GradientTape() as tape:
             # Clean Inference
@@ -215,8 +239,8 @@ class DVBPR(RecommenderModel, ABC):
 
         for self.epoch in range(self.restore_epochs, self.epochs + 1):
             start_ep = time()
-            batches = self.data.shuffle(self.batch_size)
-            loss = self.one_epoch(batches)
+            all_triples = self.data.shuffle(self.batch_size)
+            loss = self.one_epoch(all_triples)
             epoch_text = 'Epoch {0}/{1} \tLoss: {2:.3f}'.format(self.epoch, self.epochs, loss)
             self.evaluator.eval(self.epoch, results, epoch_text, start_ep)
 

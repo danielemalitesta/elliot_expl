@@ -34,6 +34,21 @@ def _get_train_batch(i):
     return np.array(user_batch)[:, None], np.array(item_pos_batch)[:, None], np.array(item_neg_batch)[:, None]
 
 
+def _get_train_all(i):
+    """
+    Generation of a batch in multiprocessing
+    :param i: index to control the triple
+    :return:
+    """
+    user = _user_input[_index[i]]
+    item_pos = _item_input_pos[_index[i]]
+    j = np.random.randint(_num_items)
+    while j in _train[_user_input[_index[i]]]:
+        j = np.random.randint(_num_items)
+    item_neg = j
+    return user, item_pos, item_neg
+
+
 class DataLoader(object):
     """
     Load train and test dataset
@@ -159,13 +174,19 @@ class DataLoader(object):
         _num_items = self.num_items
 
         np.random.shuffle(_index)
-        _num_batches = len(_user_input) // _batch_size
         pool = Pool(cpu_count())
-        res = pool.map(_get_train_batch, range(_num_batches))
-        pool.close()
-        pool.join()
 
-        user_input = [r[0] for r in res]
-        item_input_pos = [r[1] for r in res]
-        item_input_neg = [r[2] for r in res]
-        return user_input, item_input_pos, item_input_neg
+        if self.kwargs.get('rec') in ['bprmf', 'vbpr']:
+            _num_batches = len(_user_input) // _batch_size
+            res = pool.map(_get_train_batch, range(_num_batches))
+            pool.close()
+            pool.join()
+            user_input = [r[0] for r in res]
+            item_input_pos = [r[1] for r in res]
+            item_input_neg = [r[2] for r in res]
+            return user_input, item_input_pos, item_input_neg
+        else:
+            res = pool.map(_get_train_all, range(len(_user_input)))
+            pool.close()
+            pool.join()
+            return res
