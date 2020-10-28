@@ -21,3 +21,6 @@ class RecommenderModel(tf.keras.Model, ABC):
         self.batch_size = self.params.batch_size
         self.verbose = self.params.verbose
         self.restore_epochs = self.params.restore_epochs
+        self.model_name = self.params.rec
+        self.dataset_name = self.params.dataset
+        self.initializer = tf.initializers.GlorotUniform()

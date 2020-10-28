@@ -3,8 +3,6 @@ import numpy as np
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 import pandas as pd
-from scipy.sparse import dok_matrix
-from time import time
 
 np.random.seed(0)
 
@@ -21,7 +19,7 @@ _num_items = None
 def _get_train_batch(i):
     """
     Generation of a batch in multiprocessing
-    :param i: index to control the batch generayion
+    :param i: index to control the batch generation
     :return:
     """
     user_batch, item_pos_batch, item_neg_batch = [], [], []

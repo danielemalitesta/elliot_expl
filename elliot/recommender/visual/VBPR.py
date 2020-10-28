@@ -1,20 +1,22 @@
 import logging
 import os
+from abc import ABC
 
 import numpy as np
 import tensorflow as tf
+import random
 
 from dataset.visual_loader_mixin import VisualLoader
 from recommender.traditional.BPRMF import BPRMF
-from recommender.attack.attack_visual_feature_mixin import AttackVisualFeature
 
+random.seed(0)
 np.random.seed(0)
 tf.random.set_seed(0)
 logging.disable(logging.WARNING)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
-class VBPR(BPRMF, VisualLoader, AttackVisualFeature):
+class VBPR(BPRMF, VisualLoader, ABC):
 
     def __init__(self, data, params):
         """
@@ -36,25 +38,20 @@ class VBPR(BPRMF, VisualLoader, AttackVisualFeature):
 
         self.process_visual_features(data)
 
-        self.adv_eps = self.params.adv_eps
-
         # Initialize Model Parameters
-        initializer = tf.initializers.GlorotUniform()
         self.Bp = tf.Variable(
-            initializer(shape=[self.num_image_feature, 1]), name='Bp', dtype=tf.float32)
+            self.initializer(shape=[self.num_image_feature, 1]), name='Bp', dtype=tf.float32)
         self.Tu = tf.Variable(
-            initializer(shape=[self.num_users, self.embed_d]),
+            self.initializer(shape=[self.num_users, self.embed_d]),
             name='Tu', dtype=tf.float32)  # (users, low_embedding_size)
         self.F = tf.Variable(
-            initializer(shape=[self.num_items, self.num_image_feature]),
+            self.initializer(shape=[self.num_items, self.num_image_feature]),
             name='F', dtype=tf.float32, trainable=False)
         self.E = tf.Variable(
-            initializer(shape=[self.num_image_feature, self.embed_d]),
+            self.initializer(shape=[self.num_image_feature, self.embed_d]),
             name='E', dtype=tf.float32)  # (items, low_embedding_size)
 
-        self.set_delta()
-
-        self.optimizer = tf.keras.optimizers.Adagrad(learning_rate=self.learning_rate)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         self.saver_ckpt = tf.train.Checkpoint(optimizer=self.optimizer, model=self)
 
     def call(self, inputs, training=None, mask=None):
@@ -113,7 +110,7 @@ class VBPR(BPRMF, VisualLoader, AttackVisualFeature):
             # Clean Inference
             xu_pos, gamma_u, gamma_pos, emb_pos_feature, theta_u, beta_pos = \
                 self(inputs=(user, pos), training=True)
-            xu_neg, _, gamma_neg, _, _, beta_neg = self(inputs=(user, pos), training=True)
+            xu_neg, _, gamma_neg, _, _, beta_neg = self(inputs=(user, neg), training=True)
 
             result = tf.clip_by_value(xu_pos - xu_neg, -80.0, 1e8)
             loss = tf.reduce_sum(tf.nn.softplus(-result))
@@ -125,7 +122,7 @@ class VBPR(BPRMF, VisualLoader, AttackVisualFeature):
                                                  tf.nn.l2_loss(theta_u)]) \
                     + self.l_b * tf.nn.l2_loss(beta_pos) \
                     + self.l_b * tf.nn.l2_loss(beta_pos)/10 \
-                    + self.l_e * tf.nn.l2_loss(self.E, self.Bp)
+                    + self.l_e * tf.reduce_sum([tf.nn.l2_loss(self.E), tf.nn.l2_loss(self.Bp)])
 
             # Loss to be optimized
             loss += reg_loss
