@@ -73,13 +73,13 @@ class DataLoader(object):
         train = pd.read_csv(train_name, sep='\t', header=None)
         test = pd.read_csv(test_name, sep='\t', header=None)
         try:
-            train.columns = ['user', 'item', 'r', 't']
-            test.columns = ['user', 'item', 'r', 't']
+            train.columns = ['user', 'item', 'r']
+            test.columns = ['user', 'item', 'r']
             data = train.copy()
             data = data.append(test, ignore_index=True)
         except:
-            train.columns = ['user', 'item', 'r']
-            test.columns = ['user', 'item', 'r']
+            train.columns = ['user', 'item']
+            test.columns = ['user', 'item']
             data = train.copy()
             data = data.append(test, ignore_index=True)
 

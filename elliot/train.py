@@ -12,7 +12,7 @@ from utils.read import read_config
 def parse_args():
     parser = argparse.ArgumentParser(description="Run train of the Recommender Model.")
     parser.add_argument('--gpu', type=int, default=-1)
-    parser.add_argument('--dataset', nargs='?', default='tradesy', help='dataset name: movielens, lastfm')
+    parser.add_argument('--dataset', nargs='?', default='amazon_men', help='dataset name: movielens, lastfm')
     parser.add_argument('--rec', nargs='?', default="dvbpr", help="bprmf, apr, random")
     parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
     parser.add_argument('--k', type=int, default=150, help='top-k of recommendation.')
