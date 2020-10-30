@@ -1,17 +1,15 @@
 import argparse
 import os
-import shutil
 
 from dataset.dataset import DataLoader
 from recommender.traditional.BPRMF import BPRMF
 from recommender.visual.VBPR import VBPR
 from recommender.visual.DVBPR import DVBPR
-from utils.read import read_config
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run train of the Recommender Model.")
-    parser.add_argument('--gpu', type=int, default=-1)
+    parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--dataset', nargs='?', default='amazon_men', help='dataset name: movielens, lastfm')
     parser.add_argument('--rec', nargs='?', default="vbpr", help="bprmf, apr, random")
     parser.add_argument('--batch_size', type=int, default=512, help='batch_size')
@@ -42,80 +40,13 @@ def parse_args():
     return parser.parse_args()
 
 
-def manage_directories(path_output_rec_result, path_output_rec_weight):
-    if os.path.exists(os.path.dirname(path_output_rec_result)):
-        shutil.rmtree(os.path.dirname(path_output_rec_result))
-    os.makedirs(os.path.dirname(path_output_rec_result))
-    if os.path.exists(os.path.dirname(path_output_rec_weight)):
-        shutil.rmtree(os.path.dirname(path_output_rec_weight))
-    os.makedirs(os.path.dirname(path_output_rec_weight))
-
-
 def train():
     args = parse_args()
-    path_train_data, path_test_data, path_feature_data, path_output_rec_result, path_output_rec_weight = read_config(
-        sections_fields=[('PATHS', 'InputTrainFile'),
-                         ('PATHS', 'InputTestFile'),
-                         ('PATHS', 'FeatureFile'),
-                         ('PATHS', 'OutputRecResult'),
-                         ('PATHS', 'OutputRecWeight')])
-    path_train_data, path_test_data, path_feature_data, = path_train_data.format(
-        args.dataset), path_test_data.format(args.dataset), path_feature_data.format(args.dataset)
 
-    if args.rec == 'bprmf' or args.rec == 'vbpr' or args.rec == 'dvbpr':
-        path_output_rec_result = path_output_rec_result.format(args.dataset,
-                                                               args.rec,
-                                                               'emb' + str(args.embed_k),
-                                                               'ep' + str(args.epochs),
-                                                               'XX',
-                                                               'XX')
+    data = DataLoader(params=args)
 
-        path_output_rec_weight = path_output_rec_weight.format(args.dataset,
-                                                               args.rec,
-                                                               'emb' + str(args.embed_k),
-                                                               'ep' + str(args.epochs),
-                                                               'XX',
-                                                               'XX')
-    elif args.rec == 'apr' or args.rec == 'amr':
-        path_output_rec_result = path_output_rec_result.format(args.dataset,
-                                                               args.rec,
-                                                               'emb' + str(args.embed_k),
-                                                               'ep' + str(args.epochs),
-                                                               'eps' + str(args.adv_eps),
-                                                               '' + args.adv_type)
-
-        path_output_rec_weight = path_output_rec_weight.format(args.dataset,
-                                                               args.rec,
-                                                               'emb' + str(args.embed_k),
-                                                               'ep' + str(args.epochs),
-                                                               'eps' + str(args.adv_eps),
-                                                               '' + args.adv_type)
-    elif args.rec == 'random':
-        path_output_rec_result = path_output_rec_result.format(args.dataset,
-                                                               args.rec,
-                                                               'XX',
-                                                               'XX',
-                                                               'XX',
-                                                               'XX')
-
-        path_output_rec_weight = path_output_rec_weight.format(args.dataset,
-                                                               args.rec,
-                                                               'XX',
-                                                               'XX',
-                                                               'XX',
-                                                               'XX')
-
-    # Create directories to Store Results and Rec Models
-    manage_directories(path_output_rec_result, path_output_rec_weight)
-
-    data = DataLoader(path_train_data=path_train_data,
-                      path_test_data=path_test_data,
-                      visual_features=path_feature_data,
-                      model_name=args.rec,
-                      dataset_name=args.dataset)
-
-    print("RUNNING {0} Training on DATASET {1}".format(args.rec, args.dataset))
-    print("- PARAMETERS:")
+    print("TRAINING {0} ON {1}".format(args.rec, args.dataset))
+    print("PARAMETERS:")
     for arg in vars(args):
         print("\t- " + str(arg) + " = " + str(getattr(args, arg)))
     print("\n")

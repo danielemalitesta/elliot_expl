@@ -2,6 +2,7 @@ import scipy.sparse as sp
 import numpy as np
 from multiprocessing import Pool
 from multiprocessing import cpu_count
+from config.configs import *
 import pandas as pd
 
 np.random.seed(0)
@@ -54,20 +55,21 @@ class DataLoader(object):
     Load train and test dataset
     """
 
-    def __init__(self, path_train_data, path_test_data, *args, **kwargs):
+    def __init__(self, params):
         """
         Constructor of DataLoader
-        :param path_train_data: relative path for train file
-        :param path_test_data: relative path for test file
+        :param params: all input parameters
         """
+        self.params = params
+        path_train_data, path_test_data = \
+            training_path.format(self.params.dataset), \
+            test_path.format(self.params.dataset)
         self.num_users, self.num_items = self.get_length(path_train_data, path_test_data)
         self.load_train_file(path_train_data)
         self.load_train_file_as_list(path_train_data)
         self.load_test_file(path_test_data)
         self._user_input, self._item_input_pos = self.sampling()
         print('{0} - Loaded'.format(path_train_data))
-        self.args = args
-        self.kwargs = kwargs
 
     def get_length(self, train_name, test_name):
         train = pd.read_csv(train_name, sep='\t', header=None)
@@ -176,7 +178,7 @@ class DataLoader(object):
         np.random.shuffle(_index)
         pool = Pool(cpu_count())
 
-        if self.kwargs.get('rec') in ['bprmf', 'vbpr']:
+        if self.params.rec in ['bprmf', 'vbpr']:
             _num_batches = len(_user_input) // _batch_size
             res = pool.map(_get_train_batch, range(_num_batches))
             pool.close()

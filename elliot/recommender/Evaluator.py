@@ -37,7 +37,7 @@ def _evaluate_input(user):
         item_input = np.array(item_input)[:, None]
         return user_input, item_input
     except:
-        print('Item '+str(user)+' is not present within the test set!')
+        # print('Item '+str(user)+' is not present in the test set!')
         return 0, 0
 
 
@@ -110,19 +110,14 @@ class Evaluator:
         if len(epoch_text) != '':
             results[epoch] = {'hr': hr, 'ndcg': ndcg, 'auc': auc[0]}
 
-    def store_recommendation(self, attack_name=""):
+    def store_recommendation(self, attack_name="", path=""):
         """
         Store recommendation list (top-k) in order to be used for the ranksys framework (anonymized)
         attack_name: The name for the attack stored file
         :return:
         """
         results = self.model.get_full_inference().numpy()
-        with open('{0}{1}_best{2}_top{3}_rec.tsv'.format(self.model.path_output_rec_result,
-                                                          attack_name + self.model.path_output_rec_result.split('/')[
-                                                              -2],
-                                                          self.model.best,
-                                                          self.k),
-                  'w') as out:
+        with open(path, 'w') as out:
             for u in range(results.shape[0]):
                 results[u][self.data.train_list[u]] = -np.inf
                 top_k_id = results[u].argsort()[-self.k:][::-1]
