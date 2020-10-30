@@ -5,8 +5,6 @@ from PIL import Image
 from copy import deepcopy
 
 from time import time
-from multiprocessing import Pool
-from multiprocessing import cpu_count
 
 from recommender.RecommenderModel import RecommenderModel
 from utils.read import find_checkpoint
