@@ -37,7 +37,7 @@ def _evaluate_input(user):
         item_input = np.array(item_input)[:, None]
         return user_input, item_input
     except:
-        print('User '+str(user)+' is not present within the test set!')
+        print('Item '+str(user)+' is not present within the test set!')
         return 0, 0
 
 
