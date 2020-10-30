@@ -5,12 +5,13 @@ from dataset.dataset import DataLoader
 from recommender.traditional.BPRMF import BPRMF
 from recommender.visual.VBPR import VBPR
 from recommender.visual.DVBPR import DVBPR
+from config.configs import *
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run train of the Recommender Model.")
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--dataset', nargs='?', default='amazon_men', help='dataset name: movielens, lastfm')
+    parser.add_argument('--dataset', nargs='?', default='tradesy', help='dataset name: movielens, lastfm')
     parser.add_argument('--rec', nargs='?', default="vbpr", help="bprmf, apr, random")
     parser.add_argument('--batch_size', type=int, default=512, help='batch_size')
     parser.add_argument('--k', type=int, default=50, help='top-k of recommendation.')
@@ -42,6 +43,11 @@ def parse_args():
 
 def train():
     args = parse_args()
+
+    if not os.path.exists(results_dir + f'/{args.dataset}'):
+        os.makedirs(results_dir + f'/{args.dataset}')
+    if not os.path.exists(weight_dir + f'/{args.dataset}'):
+        os.makedirs(weight_dir + f'/{args.dataset}')
 
     data = DataLoader(params=args)
 

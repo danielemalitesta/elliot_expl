@@ -17,7 +17,5 @@ pip-selfcheck.json
 
 .idea
 # End of https://www.toptal.com/developers/gitignore/api/venv
-/data/tradesy/
-/rec_model_weight/tradesy/
-/rec_result/tradesy/
+/data/
 /results/

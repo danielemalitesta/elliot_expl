@@ -158,21 +158,21 @@ class BPRMF(RecommenderModel, ABC):
                 best_model = deepcopy(self)
 
             if self.epoch % self.verbose == 0 or self.epoch == 1:
-                self.saver_ckpt.save(f'''{weight_dir}/{self.params.dataset}/'
-                                     weights-{self.epoch}-{self.learning_rate}-{self.__class__.__name__}''')
+                self.saver_ckpt.save(f'{weight_dir}/{self.params.dataset}/' + \
+                                     f'weights-{self.epoch}-{self.learning_rate}-{self.__class__.__name__}')
 
-        self.evaluator.store_recommendation(path=f'''{results_dir}/{self.params.dataset}/
-                                            recs-{self.epoch}-{self.learning_rate}-{self.__class__.__name__}.tsv''')
-        save_obj(results, f'''{results_dir}/{self.params.dataset}/results-metrics-{self.learning_rate}''')
+        self.evaluator.store_recommendation(path=f'{results_dir}/{self.params.dataset}/' + \
+                                            f'recs-{self.epoch}-{self.learning_rate}-{self.__class__.__name__}.tsv')
+        save_obj(results, f'{results_dir}/{self.params.dataset}/results-metrics-{self.learning_rate}')
 
         # Store the best model
         print("Store Best Model at Epoch {0}".format(best_epoch))
         saver_ckpt = tf.train.Checkpoint(optimizer=self.optimizer, model=best_model)
-        saver_ckpt.save(f'''{weight_dir}/{self.params.dataset}/
-                        best-weights-{best_epoch}-{self.learning_rate}-{self.__class__.__name__}''')
-        best_model.evaluator.store_recommendation(path=f'''{results_dir}/{self.params.dataset}/
-                                                  best-recs-{best_epoch}-{self.learning_rate}-
-                                                  {self.__class__.__name__}.tsv''')
+        saver_ckpt.save(f'{weight_dir}/{self.params.dataset}/' + \
+                        f'best-weights-{best_epoch}-{self.learning_rate}-{self.__class__.__name__}')
+        best_model.evaluator.store_recommendation(path=f'{results_dir}/{self.params.dataset}/' + \
+                                                       f'best-recs-{best_epoch}-{self.learning_rate}-' + \
+                                                       f'{self.__class__.__name__}.tsv')
 
     def restore(self):
         if self.restore_epochs > 1:
