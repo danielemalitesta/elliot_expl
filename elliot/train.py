@@ -5,6 +5,7 @@ from dataset.dataset import DataLoader
 from recommender.traditional.BPRMF import BPRMF
 from recommender.visual.VBPR import VBPR
 from recommender.visual.DVBPR import DVBPR
+from recommender.graph.NGCF import NGCF
 from config.configs import *
 
 
@@ -12,13 +13,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run train of the Recommender Model.")
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--dataset', nargs='?', default='tradesy', help='dataset name: movielens, lastfm')
-    parser.add_argument('--rec', nargs='?', default="vbpr", help="bprmf, apr, random")
+    parser.add_argument('--rec', nargs='?', default="ngcf", help="bprmf, apr, random")
     parser.add_argument('--batch_size', type=int, default=512, help='batch_size')
     parser.add_argument('--k', type=int, default=50, help='top-k of recommendation.')
     parser.add_argument('--epochs', type=int, default=200, help='Number of epochs.')
     parser.add_argument('--verbose', type=int, default=50, help='number of epochs to store model parameters.')
-    parser.add_argument('--embed_k', type=int, default=100, help='Embedding size.')
-    parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate.')
+    parser.add_argument('--embed_k', type=int, default=64, help='Embedding size.')
+    parser.add_argument('--lr', type=float, default=0.01, help='Learning rate.')
     parser.add_argument('--restore_epochs', type=int, default=1,
                         help='Default is 1: The restore epochs (Must be lower than the epochs)')
     parser.add_argument('--best', type=int, default=0, help='Parameter useful for attack scenario. Leave at 0 here.')
@@ -34,6 +35,10 @@ def parse_args():
     parser.add_argument('--embed_d', type=int, default=20, help='size of low dimensionality')
     parser.add_argument('--lambda1', type=float, default=1.0, help='lambda1 DVBPR')
     parser.add_argument('--lambda2', type=float, default=0.001, help='lambda2 DVBPR')
+    parser.add_argument('--weight_size', type=list, default=[64], help='list of weights for NGCF')
+    parser.add_argument('--node_dropout', type=list, default=[], help='node dropout for NGCF')
+    parser.add_argument('--message_dropout', type=list, default=[1.0], help='message dropout for NGCF')
+    parser.add_argument('--n_fold', type=int, default=100, help='n fold for NGCF')
     parser.add_argument('--l_w', type=float, default=1.0, help='size of low dimensionality')
     parser.add_argument('--l_b', type=float, default=1e-2, help='size of low dimensionality')
     parser.add_argument('--l_e', type=float, default=0, help='size of low dimensionality')
@@ -65,6 +70,8 @@ def train():
         model = VBPR(data, args)
     elif args.rec == 'dvbpr':
         model = DVBPR(data, args)
+    elif args.rec == 'ngcf':
+        model = NGCF(data, args)
     else:
         raise NotImplementedError('Not implemented or unknown Recommender Model.')
     model.train()

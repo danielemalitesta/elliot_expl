@@ -3,6 +3,7 @@ import numpy as np
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 from config.configs import *
+from time import time
 import pandas as pd
 
 np.random.seed(0)
@@ -154,6 +155,35 @@ class DataLoader(object):
             _item_input_pos.append(i)
         return _user_input, _item_input_pos
 
+    def create_adj_mat(self):
+        t1 = time()
+        adj_mat = sp.dok_matrix((self.num_users + self.num_items + 2,
+                                 self.num_users + self.num_items + 2), dtype=np.float32)
+        adj_mat = adj_mat.tolil()
+        R = self.train.tolil()
+
+        adj_mat[:self.num_users + 1, self.num_users + 1:] = R
+        adj_mat[self.num_users + 1:, :self.num_users + 1] = R.T
+        adj_mat = adj_mat.todok()
+        print('Adjacency Matrix created in %f seconds' % (time() - t1))
+
+        t2 = time()
+
+        def normalized_adj_bi(adj):
+            rowsum = np.array(adj.sum(1))
+
+            d_inv_sqrt = np.power(rowsum, -0.5).flatten()
+            d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
+            d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
+            bi_adj = adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt)
+            return bi_adj.tocoo()
+
+        norm_adj_mat = normalized_adj_bi(adj_mat + sp.eye(adj_mat.shape[0]))
+        mean_adj_mat = normalized_adj_bi(adj_mat)
+
+        print('Normalize Adjacency Matrix created in %f seconds' % (time() - t2))
+        return adj_mat.tocsr(), norm_adj_mat.tocsr(), mean_adj_mat.tocsr()
+
     def shuffle(self, batch_size=512):
         """
         Shuffle dataset to create batch with batch size
@@ -178,7 +208,7 @@ class DataLoader(object):
         np.random.shuffle(_index)
         pool = Pool(cpu_count())
 
-        if self.params.rec in ['bprmf', 'vbpr']:
+        if self.params.rec in ['bprmf', 'vbpr', 'ngcf']:
             _num_batches = len(_user_input) // _batch_size
             res = pool.map(_get_train_batch, range(_num_batches))
             pool.close()
