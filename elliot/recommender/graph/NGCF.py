@@ -232,7 +232,8 @@ class NGCF(RecommenderModel, ABC):
             # Regularization Component
             reg_loss = self.l_w * tf.reduce_sum([tf.nn.l2_loss(gamma_u),
                                                  tf.nn.l2_loss(gamma_pos),
-                                                 tf.nn.l2_loss(gamma_neg)])
+                                                 tf.nn.l2_loss(gamma_neg)] +
+                                                [tf.nn.l2_loss(value) for _, value in self.Graph.items()])
 
             # Loss to be optimized
             loss += reg_loss

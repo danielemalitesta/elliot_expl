@@ -69,6 +69,7 @@ class DataLoader(object):
         self.load_train_file(path_train_data)
         self.load_train_file_as_list(path_train_data)
         self.load_test_file(path_test_data)
+        self.load_test_file_as_list(path_test_data)
         self._user_input, self._item_input_pos = self.sampling()
         print('{0} - Loaded'.format(path_train_data))
 
@@ -146,6 +147,26 @@ class DataLoader(object):
                 user, item = int(arr[0]), int(arr[1])
                 self.test.append([user, item])
                 line = f.readline()
+
+    def load_test_file_as_list(self, filename):
+        # Get number of users and items
+        u_ = 0
+        self.test_list, items = [], []
+        with open(filename, "r") as f:
+            line = f.readline()
+            index = 0
+            while line is not None and line != "":
+                arr = line.split("\t")
+                u, i = int(arr[0]), int(arr[1])
+                if u_ < u:
+                    index = 0
+                    self.test_list.append(items)
+                    items = []
+                    u_ += 1
+                index += 1
+                items.append(i)
+                line = f.readline()
+        self.test_list.append(items)
 
     def sampling(self):
         _user_input, _item_input_pos = [], []

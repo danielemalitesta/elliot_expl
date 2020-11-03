@@ -17,7 +17,7 @@ def _init_eval_model(data):
     _dataset = data
 
     pool = Pool(cpu_count() - 1)
-    feed_dicts = pool.map(_evaluate_input, range(_dataset.num_users))
+    feed_dicts = pool.map(_evaluate_input_list, range(_dataset.num_users))
     pool.close()
     pool.join()
 
@@ -37,7 +37,30 @@ def _evaluate_input(user):
         item_input = np.array(item_input)[:, None]
         return user_input, item_input
     except:
-        # print('Item '+str(user)+' is not present in the test set!')
+        # print('User '+str(user)+' is not present in the test set!')
+        return 0, 0
+
+
+def _evaluate_input_list(user):
+    # generate items_list
+    try:
+        test_items = _dataset.test_list[user]
+        item_input = set(range(_dataset.num_items)) - set(_dataset.train_list[user])
+
+        for test_item in test_items:
+            if test_item in item_input:
+                item_input.remove(test_item)
+
+        item_input = list(item_input)
+
+        for test_item in test_items:
+            item_input.append(test_item)
+
+        user_input = np.full(len(item_input), user, dtype='int32')[:, None]
+        item_input = np.array(item_input)[:, None]
+        return user_input, item_input
+    except:
+        # print('User '+str(user)+' is not present in the test set!')
         return 0, 0
 
 
@@ -47,8 +70,14 @@ def _eval_by_user(user, curr_pred):
     if type(user_input) != np.ndarray:
         return ()
     predictions = curr_pred[list(item_input.reshape(-1))]
-    neg_predict, pos_predict = predictions[:-1], predictions[-1]
-    position = (neg_predict >= pos_predict).sum()
+    # neg_predict, pos_predict = predictions[:-1], predictions[-1]
+    neg_predict, pos_predict = predictions[:-len(_dataset.test_list[user])], \
+                               predictions[-len(_dataset.test_list[user]):]
+    # position = (neg_predict >= pos_predict).sum()
+
+    position = 0
+    for t in range(len(_dataset.test_list[user])):
+        position += (neg_predict >= pos_predict[t]).sum()
 
     # calculate from HR@1 to HR@10, and from NDCG@1 to NDCG@100, AUC
     hr, ndcg, auc = [], [], []
