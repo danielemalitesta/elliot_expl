@@ -244,8 +244,8 @@ class DVBPR(RecommenderModel, ABC):
             self.evaluator.eval(self.epoch, results, epoch_text, start_ep)
 
             # print and log the best result (HR@10)
-            if max_hr < results[self.epoch]['hr'][self.evaluator.k - 1]:
-                max_hr = results[self.epoch]['hr'][self.evaluator.k - 1]
+            if max_hr < results[self.epoch]['hr']:
+                max_hr = results[self.epoch]['hr']
                 best_epoch = self.epoch
                 best_model = deepcopy(self)
 

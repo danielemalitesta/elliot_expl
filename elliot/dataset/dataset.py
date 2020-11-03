@@ -5,6 +5,7 @@ from multiprocessing import cpu_count
 from config.configs import *
 from time import time
 import pandas as pd
+import collections
 
 np.random.seed(0)
 
@@ -69,7 +70,7 @@ class DataLoader(object):
         self.load_train_file(path_train_data)
         self.load_train_file_as_list(path_train_data)
         self.load_test_file(path_test_data)
-        self.load_test_file_as_list(path_test_data)
+        self.test_list = self.load_test_file_all_users()
         self._user_input, self._item_input_pos = self.sampling()
         print('{0} - Loaded'.format(path_train_data))
 
@@ -167,6 +168,18 @@ class DataLoader(object):
                 items.append(i)
                 line = f.readline()
         self.test_list.append(items)
+
+    def load_test_file_all_users(self):
+        t_dict = {}
+        for inter in self.test:
+            if inter[0] not in t_dict:
+                t_dict[inter[0]] = []
+            t_dict[inter[0]].append(*inter[1:])
+        for tu in range(self.num_users + 1):
+            if tu not in t_dict.keys():
+                t_dict[tu] = []
+        od = collections.OrderedDict(sorted(t_dict.items()))
+        return list(map(list, od.values()))
 
     def sampling(self):
         _user_input, _item_input_pos = [], []

@@ -1,9 +1,9 @@
 import numpy as np
 from multiprocessing import Pool
 from multiprocessing import cpu_count
-import math
 from time import time
 import datetime
+import heapq
 
 _feed_dict = None
 _dataset = None
@@ -42,9 +42,9 @@ def _evaluate_input(user):
 
 
 def _evaluate_input_list(user):
-    # generate items_list
-    try:
-        test_items = _dataset.test_list[user]
+    test_items = _dataset.test_list[user]
+
+    if len(test_items) > 0:
         item_input = set(range(_dataset.num_items)) - set(_dataset.train_list[user])
 
         for test_item in test_items:
@@ -59,8 +59,7 @@ def _evaluate_input_list(user):
         user_input = np.full(len(item_input), user, dtype='int32')[:, None]
         item_input = np.array(item_input)[:, None]
         return user_input, item_input
-    except:
-        # print('User '+str(user)+' is not present in the test set!')
+    else:
         return 0, 0
 
 
@@ -69,25 +68,42 @@ def _eval_by_user(user, curr_pred):
     user_input, item_input = _feed_dicts[user]
     if type(user_input) != np.ndarray:
         return ()
+
+    # AREA UNDER CURVE (AUC)
     predictions = curr_pred[list(item_input.reshape(-1))]
-    # neg_predict, pos_predict = predictions[:-1], predictions[-1]
     neg_predict, pos_predict = predictions[:-len(_dataset.test_list[user])], \
                                predictions[-len(_dataset.test_list[user]):]
-    # position = (neg_predict >= pos_predict).sum()
 
     position = 0
     for t in range(len(_dataset.test_list[user])):
         position += (neg_predict >= pos_predict[t]).sum()
 
-    # calculate from HR@1 to HR@10, and from NDCG@1 to NDCG@100, AUC
-    hr, ndcg, auc = [], [], []
-    for k in range(1, _K + 1):
-        hr.append(position < k)
-        ndcg.append(math.log(2) / math.log(position + 2) if position < k else 0)
-        auc.append(
-            1 - (position / len(neg_predict)))  # formula: [#(Xui>Xuj) / #(Items)] = [1 - #(Xui<=Xuj) / #(Items)]
+    auc = 1 - (position / (len(neg_predict) * len(pos_predict)))
+    # formula: [#(Xui>Xuj) / #(Items)] = [1 - #(Xui<=Xuj) / #(Items)]
 
-    return hr, ndcg, auc
+    # HIT RATIO (HR)
+    item_score = {}
+    for i in list(item_input.reshape(-1)):
+        item_score[i] = curr_pred[i]
+
+    k_max_item_score = heapq.nlargest(_K, item_score, key=item_score.get)
+
+    r = []
+    for i in k_max_item_score:
+        if i in item_input[-len(_dataset.test_list[user]):]:
+            r.append(1)
+        else:
+            r.append(0)
+
+    hr = 1. if sum(r) > 0 else 0.
+
+    # PRECISION (P)
+    prec = sum(r) / len(r)
+
+    # RECALL (R)
+    rec = sum(r) / len(pos_predict)
+
+    return hr, prec, rec, auc
 
 
 class Evaluator:
@@ -126,18 +142,19 @@ class Evaluator:
             res.append(_eval_by_user(user, current_prediction))
 
         res = list(filter(None, res))
-        hr, ndcg, auc = (np.array(res).mean(axis=0)).tolist()
-        print("%s \tTrain Time: %s \tEval Time: %s \tPerformance@%d ==> HR: %.4f\tnDCG: %.4f\tAUC: %.4f" % (
+        hr, prec, rec, auc = (np.array(res).mean(axis=0)).tolist()
+        print("%s \tTrain Time: %s \tEval Time: %s \tMetrics@%d ==> HR: %.4f \tPrec: %.4f \tRec: %.4f \tAUC: %.4f" % (
             epoch_text,
             datetime.timedelta(seconds=(time() - start_time)),
             datetime.timedelta(seconds=(time() - eval_start_time)),
             _K,
-            hr[_K - 1],
-            ndcg[_K - 1],
-            auc[_K - 1]))
+            hr,
+            prec,
+            rec,
+            auc))
 
         if len(epoch_text) != '':
-            results[epoch] = {'hr': hr, 'ndcg': ndcg, 'auc': auc[0]}
+            results[epoch] = {'hr': hr, 'auc': auc}
 
     def store_recommendation(self, attack_name="", path=""):
         """
@@ -145,7 +162,7 @@ class Evaluator:
         attack_name: The name for the attack stored file
         :return:
         """
-        results = self.model.get_full_inference().numpy()
+        results = self.model.predict_all().numpy()
         with open(path, 'w') as out:
             for u in range(results.shape[0]):
                 results[u][self.data.train_list[u]] = -np.inf
