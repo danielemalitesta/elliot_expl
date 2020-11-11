@@ -63,29 +63,45 @@ class DataLoader(object):
         :param params: all input parameters
         """
         self.params = params
-        path_train_data, path_test_data = \
+
+        path_train_data, path_validation_data, path_test_data = \
             training_path.format(self.params.dataset), \
+            validation_path.format(self.params.dataset), \
             test_path.format(self.params.dataset)
-        self.num_users, self.num_items = self.get_length(path_train_data, path_test_data)
+
+        self.num_users, self.num_items = self.get_length(path_train_data, path_validation_data, path_test_data)
+
+        # train
         self.load_train_file(path_train_data)
         self.load_train_file_as_list(path_train_data)
-        self.load_test_file(path_test_data)
-        self.test_list = self.load_test_file_all_users()
-        self._user_input, self._item_input_pos = self.sampling()
-        print('{0} - Loaded'.format(path_train_data))
 
-    def get_length(self, train_name, test_name):
+        # validation
+        self.load_validation_file(path_validation_data)
+        self.load_validation_file_all_users()  # when user is not present, a [] is added
+
+        # test
+        self.load_test_file(path_test_data)
+        self.load_test_file_all_users()  # when user is not present, a [] is added
+
+        self._user_input, self._item_input_pos = self.sampling()
+
+    def get_length(self, train_name, validation_name, test_name):
         train = pd.read_csv(train_name, sep='\t', header=None)
+        validation = pd.read_csv(validation_name, sep='\t', header=None)
         test = pd.read_csv(test_name, sep='\t', header=None)
         try:
             train.columns = ['user', 'item', 'r', 't']
+            validation.columns = ['user', 'item', 'r', 't']
             test.columns = ['user', 'item', 'r', 't']
             data = train.copy()
+            data = data.append(validation, ignore_index=True)
             data = data.append(test, ignore_index=True)
         except:
             train.columns = ['user', 'item', 'r']
+            validation.columns = ['user', 'item', 'r']
             test.columns = ['user', 'item', 'r']
             data = train.copy()
+            data = data.append(validation, ignore_index=True)
             data = data.append(test, ignore_index=True)
 
         return data['user'].nunique(), data['item'].nunique()
@@ -139,6 +155,16 @@ class DataLoader(object):
                 line = f.readline()
         self.train_list.append(items)
 
+    def load_validation_file(self, filename):
+        self.validation = []
+        with open(filename, "r") as f:
+            line = f.readline()
+            while line != None and line != "":
+                arr = line.split("\t")
+                user, item = int(arr[0]), int(arr[1])
+                self.validation.append([user, item])
+                line = f.readline()
+
     def load_test_file(self, filename):
         self.test = []
         with open(filename, "r") as f:
@@ -169,6 +195,18 @@ class DataLoader(object):
                 line = f.readline()
         self.test_list.append(items)
 
+    def load_validation_file_all_users(self):
+        t_dict = {}
+        for inter in self.validation:
+            if inter[0] not in t_dict:
+                t_dict[inter[0]] = []
+            t_dict[inter[0]].append(*inter[1:])
+        for tu in range(self.num_users + 1):
+            if tu not in t_dict.keys():
+                t_dict[tu] = []
+        od = collections.OrderedDict(sorted(t_dict.items()))
+        self.validation_list = list(map(list, od.values()))
+
     def load_test_file_all_users(self):
         t_dict = {}
         for inter in self.test:
@@ -179,7 +217,7 @@ class DataLoader(object):
             if tu not in t_dict.keys():
                 t_dict[tu] = []
         od = collections.OrderedDict(sorted(t_dict.items()))
-        return list(map(list, od.values()))
+        self.test_list = list(map(list, od.values()))
 
     def sampling(self):
         _user_input, _item_input_pos = [], []
@@ -242,7 +280,7 @@ class DataLoader(object):
         np.random.shuffle(_index)
         pool = Pool(cpu_count())
 
-        if self.params.rec in ['bprmf', 'vbpr', 'ngcf']:
+        if self.params.rec in ['bprmf', 'vbpr', 'ngcf', 'deepstyle']:
             _num_batches = len(_user_input) // _batch_size
             res = pool.map(_get_train_batch, range(_num_batches))
             pool.close()

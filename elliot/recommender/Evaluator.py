@@ -24,58 +24,42 @@ def _init_eval_model(data):
     return feed_dicts
 
 
-def _evaluate_input(user):
-    # generate items_list
-    try:
-        test_item = _dataset.test[user][1]
-        item_input = set(range(_dataset.num_items)) - set(_dataset.train_list[user])
-        if test_item in item_input:
-            item_input.remove(test_item)
-        item_input = list(item_input)
-        item_input.append(test_item)
-        user_input = np.full(len(item_input), user, dtype='int32')[:, None]
-        item_input = np.array(item_input)[:, None]
-        return user_input, item_input
-    except:
-        # print('User '+str(user)+' is not present in the test set!')
-        return 0, 0
-
-
 def _evaluate_input_list(user):
-    test_items = _dataset.test_list[user]
+    validation_items = _dataset.validation_list[user]
 
-    if len(test_items) > 0:
+    if len(validation_items) > 0:
         item_input = set(range(_dataset.num_items)) - set(_dataset.train_list[user])
 
-        for test_item in test_items:
-            if test_item in item_input:
-                item_input.remove(test_item)
+        for validation_item in validation_items:
+            if validation_item in item_input:
+                item_input.remove(validation_item)
 
         item_input = list(item_input)
 
-        for test_item in test_items:
-            item_input.append(test_item)
+        for validation_item in validation_items:
+            item_input.append(validation_item)
 
         user_input = np.full(len(item_input), user, dtype='int32')[:, None]
         item_input = np.array(item_input)[:, None]
         return user_input, item_input
     else:
+        print('User {} has no validation list!'.format(user))
         return 0, 0
 
 
 def _eval_by_user(user, curr_pred):
-    # get predictions of data in testing set
+    # get predictions of data in validation set
     user_input, item_input = _feed_dicts[user]
     if type(user_input) != np.ndarray:
         return ()
 
     # AREA UNDER CURVE (AUC)
     predictions = curr_pred[list(item_input.reshape(-1))]
-    neg_predict, pos_predict = predictions[:-len(_dataset.test_list[user])], \
-                               predictions[-len(_dataset.test_list[user]):]
+    neg_predict, pos_predict = predictions[:-len(_dataset.validation_list[user])], \
+                               predictions[-len(_dataset.validation_list[user]):]
 
     position = 0
-    for t in range(len(_dataset.test_list[user])):
+    for t in range(len(_dataset.validation_list[user])):
         position += (neg_predict >= pos_predict[t]).sum()
 
     auc = 1 - (position / (len(neg_predict) * len(pos_predict)))
@@ -90,7 +74,7 @@ def _eval_by_user(user, curr_pred):
 
     r = []
     for i in k_max_item_score:
-        if i in item_input[-len(_dataset.test_list[user]):]:
+        if i in item_input[-len(_dataset.validation_list[user]):]:
             r.append(1)
         else:
             r.append(0)
@@ -143,7 +127,7 @@ class Evaluator:
 
         res = list(filter(None, res))
         hr, prec, rec, auc = (np.array(res).mean(axis=0)).tolist()
-        print("%s \tTrain Time: %s \tEval Time: %s \tMetrics@%d ==> HR: %.4f \tPrec: %.4f \tRec: %.4f \tAUC: %.4f" % (
+        print("%s \tTrain Time: %s \tValidation Time: %s \tMetrics@%d ==> HR: %.4f \tPrec: %.4f \tRec: %.4f \tAUC: %.4f" % (
             epoch_text,
             datetime.timedelta(seconds=(time() - start_time)),
             datetime.timedelta(seconds=(time() - eval_start_time)),
