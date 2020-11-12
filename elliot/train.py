@@ -13,7 +13,7 @@ from config.configs import *
 def parse_args():
     parser = argparse.ArgumentParser(description="Run train of the Recommender Model.")
     parser.add_argument('--gpu', type=int, default=-1)
-    parser.add_argument('--dataset', nargs='?', default='tradesy', help='dataset name')
+    parser.add_argument('--dataset', nargs='?', default='amazon_fashion', help='dataset name')
     parser.add_argument('--rec', nargs='?', default="deepstyle", help="set recommendation model")
     parser.add_argument('--batch_size', type=int, default=1024, help='batch_size')
     parser.add_argument('--k', type=int, default=50, help='top-k of recommendation.')

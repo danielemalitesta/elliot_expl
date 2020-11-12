@@ -1,6 +1,6 @@
 # DATASET
 data_path = '../data/{0}/'
-imagenet_classes_path = '../../data/imagenet_classes.txt'
+imagenet_classes_path = '../data/imagenet_classes.txt'
 all_items = data_path + 'all_items.csv'
 all_interactions = data_path + 'all_interactions.tsv'
 users = data_path + 'users.tsv'

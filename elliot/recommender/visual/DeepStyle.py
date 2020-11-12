@@ -42,7 +42,7 @@ class DeepStyle(BPRMF, VisualLoader, ABC):
             self.initializer(shape=[self.num_items, self.embed_k]),
             name='L', dtype=tf.float32)
         self.F = tf.Variable(
-            self.initializer(shape=[self.num_items, self.num_image_feature]),
+            self.emb_image,
             name='F', dtype=tf.float32, trainable=False)
         self.E = tf.Variable(
             self.initializer(shape=[self.num_image_feature, self.embed_k]),

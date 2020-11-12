@@ -45,7 +45,7 @@ class VBPR(BPRMF, VisualLoader, ABC):
             self.initializer(shape=[self.num_users, self.embed_d]),
             name='Tu', dtype=tf.float32)  # (users, low_embedding_size)
         self.F = tf.Variable(
-            self.initializer(shape=[self.num_items, self.num_image_feature]),
+            self.emb_image,
             name='F', dtype=tf.float32, trainable=False)
         self.E = tf.Variable(
             self.initializer(shape=[self.num_image_feature, self.embed_d]),
