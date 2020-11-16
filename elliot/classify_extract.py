@@ -14,6 +14,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run classification and feature extraction for original images.")
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--dataset', nargs='?', default='amazon_fashion', help='dataset path')
+    parser.add_argument('--model_name', nargs='?', default='ResNet152', help='model for feature extraction')
+    parser.add_argument('--output_name', nargs='?', default='conv5_block3_out', help='output layer name')
 
     return parser.parse_args()
 
@@ -25,15 +27,24 @@ def classify_extract():
     os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
     # model setting
-    model = FeatureExtractor(imagenet=read_imagenet_classes_txt(imagenet_classes_path))
+    model = FeatureExtractor(
+        model_name=args.model_name,
+        output_layer=args.output_name,
+        imagenet=read_imagenet_classes_txt(imagenet_classes_path)
+    )
 
     # dataset setting
-    data = Dataset(dataset=args.dataset)
+    data = Dataset(
+        dataset=args.dataset,
+        resize=(224, 224),
+        model_name=args.model_name
+    )
     print('Loaded dataset from %s' % images_path.format(args.dataset))
 
     # features and classes
     df = pd.DataFrame([], columns={'ImageID', 'ClassStr', 'ClassNum', 'Prob'})
-    features = np.empty(shape=(data.num_samples, 2048))
+    features_shape = [data.num_samples, *model.model.output.shape[1:]]
+    features = np.empty(shape=features_shape)
 
     # classification and features extraction
     print('Starting classification...\n')
@@ -42,7 +53,7 @@ def classify_extract():
     for i, d in enumerate(data):
         image, path = d
         out_class = model.classify(sample=(image, path))
-        features[i, :] = model.model(image)
+        features[i] = model.model(image)
         df = df.append(out_class, ignore_index=True)
         if (i + 1) % 100 == 0:
             sys.stdout.write('\r%d/%d samples completed' % (i + 1, data.num_samples))

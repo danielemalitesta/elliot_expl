@@ -6,16 +6,17 @@ from recommender.traditional.BPRMF import BPRMF
 from recommender.visual.VBPR import VBPR
 from recommender.visual.DVBPR import DVBPR
 from recommender.visual.DeepStyle import DeepStyle
+from recommender.visual.ACF import ACF
 from recommender.graph.NGCF import NGCF
 from config.configs import *
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run train of the Recommender Model.")
-    parser.add_argument('--gpu', type=int, default=-1)
+    parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--dataset', nargs='?', default='amazon_fashion', help='dataset name')
-    parser.add_argument('--rec', nargs='?', default="deepstyle", help="set recommendation model")
-    parser.add_argument('--batch_size', type=int, default=1024, help='batch_size')
+    parser.add_argument('--rec', nargs='?', default="acf", help="set recommendation model")
+    parser.add_argument('--batch_size', type=int, default=128, help='batch_size')
     parser.add_argument('--k', type=int, default=50, help='top-k of recommendation.')
     parser.add_argument('--epochs', type=int, default=500, help='Number of epochs.')
     parser.add_argument('--verbose', type=int, default=50, help='number of epochs to store model parameters.')
@@ -38,6 +39,8 @@ def parse_args():
     parser.add_argument('--lambda1', type=float, default=1.0, help='lambda1 DVBPR')
     parser.add_argument('--lambda2', type=float, default=0.001, help='lambda2 DVBPR')
     parser.add_argument('--weight_size', type=list, default=[64], help='list of weights for NGCF')
+    parser.add_argument('--layers_component', type=list, default=[64, 1], help='list component level layers for ACF')
+    parser.add_argument('--layers_item', type=list, default=[64, 1], help='list item level layers for ACF')
     parser.add_argument('--node_dropout', type=list, default=[], help='node dropout for NGCF')
     parser.add_argument('--message_dropout', type=list, default=[0.1], help='message dropout for NGCF')
     parser.add_argument('--n_fold', type=int, default=100, help='n fold for NGCF')
@@ -74,6 +77,8 @@ def train():
         model = DVBPR(data, args)
     elif args.rec == 'deepstyle':
         model = DeepStyle(data, args)
+    elif args.rec == 'acf':
+        model = ACF(data, args)
     elif args.rec == 'ngcf':
         model = NGCF(data, args)
     else:

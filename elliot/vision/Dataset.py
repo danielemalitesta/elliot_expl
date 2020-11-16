@@ -6,11 +6,13 @@ import os
 
 
 class Dataset:
-    def __init__(self, dataset):
+    def __init__(self, dataset, model_name, resize=None):
         self.directory = images_path.format(dataset)
         self.filenames = os.listdir(self.directory)
         self.filenames.sort(key=lambda x: int(x.split(".")[0]))
         self.num_samples = len(self.filenames)
+        self.model_name = model_name
+        self.resize = resize
 
     def __len__(self):
         return self.num_samples
@@ -21,6 +23,14 @@ class Dataset:
         if sample.mode != 'RGB':
             sample = sample.convert(mode='RGB')
 
-        sample = np.expand_dims(tf.keras.applications.resnet50.preprocess_input(np.array(sample)), axis=0)
+        if self.resize:
+            sample = sample.resize(self.resize, resample=Image.BICUBIC)
 
-        return sample, self.filenames[idx]
+        if self.model_name == 'ResNet50':
+            sample = tf.keras.applications.resnet.preprocess_input(np.array(sample))
+        elif self.model_name == 'ResNet152':
+            sample = tf.keras.applications.resnet.preprocess_input(np.array(sample))
+        else:
+            raise NotImplemented('This feature extractor has not been added yet!')
+
+        return np.expand_dims(sample, axis=0), self.filenames[idx]

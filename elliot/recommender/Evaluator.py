@@ -119,7 +119,11 @@ class Evaluator:
         res = []
 
         eval_start_time = time()
-        all_predictions = self.model.predict_all().numpy()
+
+        if self.model.model_name in ['acf']:
+            all_predictions = self.model.predict_all_validation().numpy()
+        else:
+            all_predictions = self.model.predict_all().numpy()
 
         for user in range(self.model.data.num_users):
             current_prediction = all_predictions[user, :]

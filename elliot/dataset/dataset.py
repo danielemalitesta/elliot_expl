@@ -280,7 +280,7 @@ class DataLoader(object):
         np.random.shuffle(_index)
         pool = Pool(cpu_count())
 
-        if self.params.rec in ['bprmf', 'vbpr', 'ngcf', 'deepstyle']:
+        if self.params.rec in ['bprmf', 'vbpr', 'ngcf', 'deepstyle', 'acf']:
             _num_batches = len(_user_input) // _batch_size
             res = pool.map(_get_train_batch, range(_num_batches))
             pool.close()

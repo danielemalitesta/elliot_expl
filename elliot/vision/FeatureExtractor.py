@@ -12,6 +12,9 @@ class FeatureExtractor:
         if self.model_name == 'ResNet50':
             self.classifier = tf.keras.applications.ResNet50()
             self.model = tf.keras.Model(self.classifier.input, self.classifier.get_layer(output_layer).output)
+        elif self.model_name == 'ResNet152':
+            self.classifier = tf.keras.applications.ResNet152()
+            self.model = tf.keras.Model(self.classifier.input, self.classifier.get_layer(output_layer).output)
         else:
             raise NotImplemented('This feature extractor has not been added yet!')
 
