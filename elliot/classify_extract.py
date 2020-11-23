@@ -59,8 +59,8 @@ def classify_extract():
             sys.stdout.write('\r%d/%d samples completed' % (i + 1, data.num_samples))
             sys.stdout.flush()
 
-    write_csv(df=df, filename=classes_path.format(args.dataset))
-    save_np(npy=features, filename=features_path.format(args.dataset))
+    write_csv(df=df, filename=classes_path.format(args.dataset, args.model_name.lower()))
+    save_np(npy=features, filename=features_path.format(args.dataset, args.model_name.lower(), args.output_name))
 
     end = time.time()
 

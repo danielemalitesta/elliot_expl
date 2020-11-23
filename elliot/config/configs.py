@@ -10,8 +10,8 @@ validation_path = data_path + 'validationset.tsv'
 test_path = data_path + 'testset.tsv'
 original = data_path + 'original/'
 images_path = original + 'images/'
-classes_path = original + 'classes.csv'
-features_path = original + 'features.npy'
+classes_path = original + 'classes_{0}.csv'
+features_path = original + 'features_{0}_{1}.npy'
 
 # RESULTS
 weight_dir = '../results/rec_model_weights'

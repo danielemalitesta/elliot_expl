@@ -7,7 +7,7 @@ import random
 random.seed(1234)
 
 parser = argparse.ArgumentParser(description="Run dataset splitting.")
-parser.add_argument('--dataset', nargs='?', default='pinterest', help='dataset name')
+parser.add_argument('--dataset', nargs='?', default='amazon_clothing', help='dataset name')
 parser.add_argument('--test_size', type=float, default=0.2, help='test set size')
 parser.add_argument('--percentage', type=bool, default=False, help='whether using a % to express val and test set')
 parser.add_argument('--validation_size', type=float, default=0.1, help='validation set size')
