@@ -27,14 +27,28 @@ g_meta = gzip.open(data_path.format(args.dataset) + args.file_meta, 'rb')
 # TRADESY 2014
 def get_users_items(record):
     d = eval(record)
-    if len(d.get('lists').get('bought') + d.get('lists').get('want')) > 0:
+    selling = d.get('lists').get('selling')
+    sold = d.get('lists').get('sold')
+    bought = d.get('lists').get('bought')
+    want = d.get('lists').get('want')
+    if len(selling + sold + bought + want) > 0:
         current_user_items = []
-        for b in d.get('lists').get('bought'):
+        for se in selling:
+            current_user_items.append({
+                'USER': d.get('uid'),
+                'ITEM': se
+            })
+        for so in sold:
+            current_user_items.append({
+                'USER': d.get('uid'),
+                'ITEM': so
+            })
+        for b in bought:
             current_user_items.append({
                 'USER': d.get('uid'),
                 'ITEM': b
             })
-        for w in d.get('lists').get('want'):
+        for w in want:
             current_user_items.append({
                 'USER': d.get('uid'),
                 'ITEM': w
