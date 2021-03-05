@@ -185,5 +185,5 @@ def config_test(builder, base):
     base.base_namespace.config_test = False
 
 if __name__ == '__main__':
-    run_experiment("./config/config.yml")
+    run_experiment("config/config.yml")
 
