@@ -21,7 +21,7 @@ class VNPRModel(keras.Model):
     def __init__(self,
                  num_users,
                  num_items,
-                 embed_mf_size, l_w, mlp_hidden_size, dropout, learning_rate=0.01,
+                 embed_mf_size, l_w, l_v, mlp_hidden_size, dropout, learning_rate=0.01,
                  emb_image=None,
                  name="VNPR",
                  **kwargs):
@@ -31,6 +31,7 @@ class VNPRModel(keras.Model):
         self.num_items = num_items
         self.embed_mf_size = embed_mf_size
         self.l_w = l_w
+        self.l_v = l_v
         self.mlp_hidden_size = mlp_hidden_size
         self.dropout = dropout
 
@@ -45,6 +46,9 @@ class VNPRModel(keras.Model):
         self.item_mf_embedding_2 = keras.layers.Embedding(input_dim=self.num_items, output_dim=self.embed_mf_size,
                                                           embeddings_initializer=self.initializer, name='I_MF_2',
                                                           dtype=tf.float32)
+
+        self.user_visual_weight = tf.Variable(initial_value=self.initializer([self.embed_mf_size, emb_image.shape[1]]),
+                                              name='W_v', dtype=tf.float32)
 
         self.emb_image = emb_image
 
@@ -68,7 +72,7 @@ class VNPRModel(keras.Model):
         self.optimizer = tf.optimizers.Adam(learning_rate)
 
     @tf.function
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs, training=False, mask=None):
         user, item1, item2 = inputs
         user_mf_e = self.user_mf_embedding(user)
         item_mf_e_1 = self.item_mf_embedding_1(item1)
@@ -76,11 +80,11 @@ class VNPRModel(keras.Model):
         feature_e_1 = tf.nn.embedding_lookup(self.F, item1)
         feature_e_2 = tf.nn.embedding_lookup(self.F, item2)
 
-        embedding_input_1 = tf.concat([user_mf_e * item_mf_e_1, feature_e_1], axis=2)  # [batch_size, embedding_size]
-        mlp_output_1 = self.mlp_layers_1(embedding_input_1)  # [batch_size, 1]
+        embedding_input_1 = tf.concat([user_mf_e * item_mf_e_1, tf.tensordot(user_mf_e, self.user_visual_weight, axes=[[2], [0]]) * feature_e_1], axis=2)  # [batch_size, embedding_size]
+        mlp_output_1 = self.mlp_layers_1(embedding_input_1, training)  # [batch_size, 1]
 
-        embedding_input_2 = tf.concat([user_mf_e * item_mf_e_2, feature_e_2], axis=2)
-        mlp_output_2 = self.mlp_layers_2(embedding_input_2)  # [batch_size, 1]
+        embedding_input_2 = tf.concat([user_mf_e * item_mf_e_2, tf.tensordot(user_mf_e, self.user_visual_weight, axes=[[2], [0]]) * feature_e_2], axis=2)
+        mlp_output_2 = self.mlp_layers_2(embedding_input_2, training)  # [batch_size, 1]
 
         return tf.squeeze(mlp_output_1), tf.squeeze(mlp_output_2), user_mf_e, item_mf_e_1, item_mf_e_2
 
@@ -97,7 +101,10 @@ class VNPRModel(keras.Model):
             # Regularization Component
             reg_loss = self.l_w * tf.reduce_sum([tf.nn.l2_loss(user_mf_e),
                                                  tf.nn.l2_loss(item_mf_e_1),
-                                                 tf.nn.l2_loss(item_mf_e_2)])
+                                                 tf.nn.l2_loss(item_mf_e_2)]) \
+                       + self.l_v * tf.reduce_sum([tf.nn.l2_loss(self.user_visual_weight),
+                                                  *[tf.nn.l2_loss(w1) for w1 in self.mlp_layers_1.trainable_variables],
+                                                  *[tf.nn.l2_loss(w2) for w2 in self.mlp_layers_2.trainable_variables]])
             # Loss to be optimized
             loss += reg_loss
 
@@ -132,11 +139,11 @@ class VNPRModel(keras.Model):
         item_mf_e_2 = self.item_mf_embedding_2(item)
         feature_e = tf.nn.embedding_lookup(self.F, item)
 
-        mf_output_1 = tf.concat([user_mf_e * item_mf_e_1, feature_e], axis=2)  # [batch_size, embedding_size]
-        mf_output_2 = tf.concat([user_mf_e * item_mf_e_2, feature_e], axis=2)  # [batch_size, embedding_size]
+        mf_output_1 = tf.concat([user_mf_e * item_mf_e_1, tf.tensordot(user_mf_e, self.user_visual_weight, axes=[[2], [0]]) * feature_e], axis=2)  # [batch_size, embedding_size]
+        mf_output_2 = tf.concat([user_mf_e * item_mf_e_2, tf.tensordot(user_mf_e, self.user_visual_weight, axes=[[2], [0]]) * feature_e], axis=2)  # [batch_size, embedding_size]
 
-        mlp_output_1 = self.mlp_layers_1(mf_output_1)  # [batch_size, 1]
-        mlp_output_2 = self.mlp_layers_2(mf_output_2)  # [batch_size, 1]
+        mlp_output_1 = self.mlp_layers_1(mf_output_1, training)  # [batch_size, 1]
+        mlp_output_2 = self.mlp_layers_2(mf_output_2, training)  # [batch_size, 1]
 
         return tf.squeeze((mlp_output_1+mlp_output_2)/2)
 

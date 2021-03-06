@@ -35,7 +35,8 @@ class VNPR(RecMixin, BaseRecommenderModel):
         mlp_hidden_size: Tuple with number of units for each multi-layer perceptron layer
         prob_keep_dropout: Dropout rate for multi-layer perceptron
         batch_size: Batch size
-        l_w: Regularization coefficient
+        l_w: Regularization coefficient for user and item
+        l_v: Regularization coefficient for visual
 
     To include the recommendation model, add it to the config file adopting the following pattern:
 
@@ -52,6 +53,7 @@ class VNPR(RecMixin, BaseRecommenderModel):
           prob_keep_dropout: 0.2
           batch_size: 64
           l_w: 0.001
+          l_v: 0.001
     """
     @init_charger
     def __init__(self, data, config, params, *args, **kwargs):
@@ -62,6 +64,7 @@ class VNPR(RecMixin, BaseRecommenderModel):
         self._params_list = [
             ("_learning_rate", "lr", "lr", 0.001, None, None),
             ("_l_w", "l_w", "l_w", 0.001, None, None),
+            ("_l_v", "l_v", "l_v", 0.001, None, None),
             ("_mf_factors", "mf_factors", "mffactors", 10, None, None),
             ("_mlp_hidden_size", "mlp_hidden_size", "mlpunits", "(32,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
             ("_dropout", "dropout", "drop", 0.2, None, None)
@@ -77,7 +80,7 @@ class VNPR(RecMixin, BaseRecommenderModel):
         self._sp_i_train = self._data.sp_i_train
         self._i_items_set = list(range(self._num_items))
 
-        self._model = VNPRModel(self._num_users, self._num_items, self._mf_factors, self._l_w,
+        self._model = VNPRModel(self._num_users, self._num_items, self._mf_factors, self._l_w, self._l_v,
                                                      self._mlp_hidden_size,
                                                      self._dropout,
                                                      self._learning_rate,
