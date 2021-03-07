@@ -14,6 +14,8 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
+from elliot.recommender.base_recommender_model import init_charger
+
 import elliot.dataset.samplers.custom_sparse_sampler as css
 from elliot.recommender import BaseRecommenderModel
 from elliot.recommender.recommender_utils_mixin import RecMixin
@@ -57,6 +59,7 @@ class ACF(RecMixin, BaseRecommenderModel):
           layers_component: (64, 1)
           layers_item: (64, 1)
     """
+    @init_charger
     def __init__(self, data, config, params, *args, **kwargs):
         super().__init__(data, config, params, *args, **kwargs)
 
@@ -135,3 +138,14 @@ class ACF(RecMixin, BaseRecommenderModel):
                     if self._save_recs:
                         store_recommendation(recs, self._config.path_output_rec_result + f"{self.name}-it:{it + 1}.tsv")
 
+    def get_recommendations(self, k: int = 100):
+        predictions_top_k = {}
+        for index, offset in enumerate(range(0, self._num_users, self._params.batch_size)):
+            offset_stop = min(offset+self._params.batch_size, self._num_users)
+            predictions = self._model.predict(offset, offset_stop)
+            mask = self.get_train_mask(offset, offset_stop)
+            v, i = self._model.get_top_k(predictions, mask, k=k)
+            items_ratings_pair = [list(zip(map(self._data.private_items.get, u_list[0]), u_list[1]))
+                                  for u_list in list(zip(i.numpy(), v.numpy()))]
+            predictions_top_k.update(dict(zip(range(offset, offset_stop), items_ratings_pair)))
+        return predictions_top_k
