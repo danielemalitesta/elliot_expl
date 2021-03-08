@@ -94,7 +94,7 @@ class ACF(RecMixin, BaseRecommenderModel):
                                 self._layers_item,
                                 self._learning_rate,
                                 self._l_w,
-                                self._data.visual_features[item_indices],
+                                self._data.visual_feat_map_features[item_indices],
                                 self._data.sp_i_train.toarray(),
                                 self._num_users,
                                 self._num_items)

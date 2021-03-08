@@ -9,6 +9,7 @@ experiment:
     side_information:
       visual_features: ../data/{0}/original/cnn_features_vgg19_fc2.npy
       visual_pca_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
+      visual_feat_map_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
       item_mapping: ../data/{0}/visual_feats.tsv
       images_src_folder: ../data/{0}/original/images/
       output_image_size: (224,224)
