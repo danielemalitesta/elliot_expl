@@ -74,10 +74,13 @@ class VisualLoader:
             path_val_data = getattr(config.data_config, "validation_path", None)
             path_test_data = config.data_config.test_path
             visual_feature_path = getattr(config.data_config.side_information, "visual_features", None)
+            visual_pca_feature_path = getattr(config.data_config.side_information, "visual_pca_features", None)
             item_mapping_path = getattr(config.data_config.side_information, "item_mapping", None)
             size_tuple = getattr(config.data_config.side_information, "output_image_size", None)
 
             if visual_feature_path and item_mapping_path:
+                feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
+            elif visual_pca_feature_path and item_mapping_path:
                 feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
             else:
                 feature_set = {}
@@ -100,10 +103,12 @@ class VisualLoader:
 
             self.side_information_data = SimpleNamespace()
 
-            self.train_dataframe, self.side_information_data.aligned_items = self.load_dataset_dataframe(path_train_data,
-                                                                                                         "\t",
-                                                                                                         visual_set)
+            self.train_dataframe, self.side_information_data.aligned_items = self.load_dataset_dataframe(
+                path_train_data,
+                "\t",
+                visual_set)
             self.side_information_data.visual_feature_path = visual_feature_path
+            self.side_information_data.visual_pca_feature_path = visual_pca_feature_path
             self.side_information_data.item_mapping_path = item_mapping_path
             self.side_information_data.images_src_folder = images_src_folder
             self.side_information_data.size_tuple = size_tuple
@@ -131,11 +136,13 @@ class VisualLoader:
             path_dataset = config.data_config.dataset_path
 
             visual_feature_path = getattr(config.data_config.side_information, "visual_features", None)
+            visual_pca_feature_path = getattr(config.data_config.side_information, "visual_pca_features", None)
             item_mapping_path = getattr(config.data_config.side_information, "item_mapping", None)
             size_tuple = getattr(config.data_config.side_information, "output_image_size", None)
 
-
             if visual_feature_path and item_mapping_path:
+                feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
+            elif visual_pca_feature_path and item_mapping_path:
                 feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
             else:
                 feature_set = {}
@@ -162,6 +169,7 @@ class VisualLoader:
                                                                                                    "\t",
                                                                                                    visual_set)
             self.side_information_data.visual_feature_path = visual_feature_path
+            self.side_information_data.visual_pca_feature_path = visual_pca_feature_path
             self.side_information_data.item_mapping_path = item_mapping_path
             self.side_information_data.images_src_folder = images_src_folder
             self.side_information_data.size_tuple = size_tuple
@@ -188,7 +196,8 @@ class VisualLoader:
         for dirs in os.listdir(folder_path):
             for test_dir in dirs:
                 test_ = pd.read_csv(f"{folder_path}{test_dir}/test.tsv", sep="\t")
-                val_dirs = [f"{folder_path}{test_dir}/{val_dir}/" for val_dir in os.listdir(f"{folder_path}{test_dir}") if os.path.isdir(f"{folder_path}{test_dir}/{val_dir}")]
+                val_dirs = [f"{folder_path}{test_dir}/{val_dir}/" for val_dir in os.listdir(f"{folder_path}{test_dir}")
+                            if os.path.isdir(f"{folder_path}{test_dir}/{val_dir}")]
                 val_list = []
                 for val_dir in val_dirs:
                     train_ = pd.read_csv(f"{val_dir}/train.tsv", sep="\t")
@@ -208,21 +217,24 @@ class VisualLoader:
                 # validation level
                 val_list = []
                 for train, val in train_val:
-                    single_dataobject = VisualDataObject(self.config, (train,val,test), self.side_information_data, self.args, self.kwargs)
+                    single_dataobject = VisualDataObject(self.config, (train, val, test), self.side_information_data,
+                                                         self.args, self.kwargs)
                     val_list.append(single_dataobject)
                 data_list.append(val_list)
             else:
-                single_dataobject = VisualDataObject(self.config, (train_val, test), self.side_information_data, self.args,
+                single_dataobject = VisualDataObject(self.config, (train_val, test), self.side_information_data,
+                                                     self.args,
                                                      self.kwargs)
                 data_list.append([single_dataobject])
         return data_list
 
     def generate_dataobjects_mock(self) -> t.List[object]:
         _column_names = ['userId', 'itemId', 'rating']
-        training_set = np.random.randint(0, self.config.top_k*20, size=(self.config.top_k*20, 3))
-        test_set = np.random.randint(0, self.config.top_k*20, size=(self.config.top_k*20, 3))
+        training_set = np.random.randint(0, self.config.top_k * 20, size=(self.config.top_k * 20, 3))
+        test_set = np.random.randint(0, self.config.top_k * 20, size=(self.config.top_k * 20, 3))
 
         visual_feature_path = getattr(self.config.data_config.side_information, "visual_features", None)
+        visual_pca_feature_path = getattr(self.config.data_config.side_information, "visual_pca_features", None)
         item_mapping_path = getattr(self.config.data_config.side_information, "item_mapping", None)
         size_tuple = getattr(self.config.data_config.side_information, "output_image_size", None)
         images_src_folder = getattr(self.config.data_config.side_information, "images_src_folder", None)
@@ -230,6 +242,7 @@ class VisualLoader:
         side_information_data = SimpleNamespace()
 
         side_information_data.visual_feature_path = visual_feature_path
+        side_information_data.visual_pca_feature_path = visual_pca_feature_path
         side_information_data.item_mapping_path = item_mapping_path
         side_information_data.images_src_folder = images_src_folder
         side_information_data.size_tuple = size_tuple
@@ -258,7 +271,7 @@ class VisualLoader:
 
         return data, visual_feature_set
 
-    def reduce_dataset_by_item_list(self, ratings_file, items, separator = '\t'):
+    def reduce_dataset_by_item_list(self, ratings_file, items, separator='\t'):
         column_names = ["userId", "itemId", "rating"]
         data = pd.read_csv(ratings_file, sep=separator, header=None, names=column_names)
         data = data[data[column_names[1]].isin(items)]
@@ -282,6 +295,12 @@ class VisualDataObject:
             self.visual_features = np.load(self.side_information_data.visual_feature_path)
             self.item_mapping = pd.read_csv(self.side_information_data.item_mapping_path, sep="\t", header=None)
             self.item_mapping = {i: j for i, j in zip(self.item_mapping[0], self.item_mapping[1])}
+
+        if self.side_information_data.visual_pca_feature_path:
+            self.visual_pca_features = np.load(self.side_information_data.visual_pca_feature_path)
+            if not self.side_information_data.visual_feature_path:
+                self.item_mapping = pd.read_csv(self.side_information_data.item_mapping_path, sep="\t", header=None)
+                self.item_mapping = {i: j for i, j in zip(self.item_mapping[0], self.item_mapping[1])}
 
         if self.side_information_data.images_src_folder:
             self.output_image_size = literal_eval(
@@ -342,7 +361,7 @@ class VisualDataObject:
         with c.ProcessPoolExecutor() as executor:
             workers = os.cpu_count()
             for offset_start in range(0, len(paths), workers):
-                offset_stop = min(offset_start+workers, len(paths))
+                offset_stop = min(offset_start + workers, len(paths))
 
                 results = executor.map(self.read_single_image,
                                        [images_folder] * workers,
@@ -374,7 +393,6 @@ class VisualDataObject:
                 _logger = logging.get_logger(__class__.__name__)
                 _logger.error(f'Image at path {os.path.join(images_folder, image_path)} was not loaded correctly!')
                 _logger.error(er)
-
 
     def dataframe_to_dict(self, data):
         users = list(data['userId'].unique())
@@ -424,5 +442,3 @@ class VisualDataObject:
 
     def get_validation(self):
         return self.val_dict if hasattr(self, 'val_dict') else None
-
-

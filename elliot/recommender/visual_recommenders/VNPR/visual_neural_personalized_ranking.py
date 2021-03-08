@@ -84,11 +84,11 @@ class VNPR(RecMixin, BaseRecommenderModel):
                                                      self._mlp_hidden_size,
                                                      self._dropout,
                                                      self._learning_rate,
-                                                     self._data.visual_features[item_indices])
+                                                     self._data.visual_pca_features[item_indices])
 
     @property
     def name(self):
-        return "NPR"\
+        return "VNPR"\
                + "_e:" + str(self._epochs) \
                + "_bs:" + str(self._batch_size) \
                + f"_{self.get_params_shortcut()}"
