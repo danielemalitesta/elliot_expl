@@ -14,6 +14,7 @@ experiment:
       images_src_folder: ../data/{0}/original/images/
       shapes_src_folder: ../data/{0}/original/shapes/
       output_image_size: (224,224)
+      output_shape_size: (224,224)
   dataset: amazon_baby
   top_k: 50
   config_test: True
