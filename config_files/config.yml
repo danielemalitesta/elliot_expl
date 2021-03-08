@@ -12,6 +12,7 @@ experiment:
       visual_feat_map_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
       item_mapping: ../data/{0}/visual_feats.tsv
       images_src_folder: ../data/{0}/original/images/
+      shapes_src_folder: ../data/{0}/original/shapes/
       output_image_size: (224,224)
   dataset: amazon_baby
   top_k: 50
