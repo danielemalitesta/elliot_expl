@@ -1,6 +1,6 @@
 # ELLIOT
 
-![PyPI - Python Version](https://img.shields.io/badge/version-3.6%7C3.7%7C3.8-blue) [![Version](https://img.shields.io/badge/version-v0.1.0-green)](https://github.com/sisinflab/elliot) ![GitHub repo size](https://img.shields.io/github/repo-size/sisinflab/elliot) ![GitHub](https://img.shields.io/github/license/sisinflab/elliot.svg)
+![PyPI - Python Version](https://img.shields.io/badge/python-3.6%7C3.7%7C3.8-blue) [![Version](https://img.shields.io/badge/version-v0.1.0-green)](https://github.com/sisinflab/elliot) ![GitHub repo size](https://img.shields.io/github/repo-size/sisinflab/elliot) ![GitHub](https://img.shields.io/github/license/sisinflab/elliot.svg)
 
 [Docs] | [Paper]
 
@@ -48,7 +48,7 @@ working configurations.
 ```bash
 git clone https://github.com//sisinflab/elliot.git && cd elliot
 conda create --name elliot_env python=3.8
-conda activate
+conda activate elliot_env
 pip install --upgrade pip
 pip install -e . --verbose
 ```
@@ -56,7 +56,7 @@ pip install -e . --verbose
 #### VIRTUALENV
 ```bash
 git clone https://github.com//sisinflab/elliot.git && cd elliot
-virtualenv -p /usr/bin/pyhton3.6 venv # your python location and version
+virtualenv -p /usr/bin/python3.6 venv # your python location and version
 source venv/bin/activate
 pip install --upgrade pip
 pip install -e . --verbose
@@ -90,20 +90,20 @@ experiment:
   data_config:
     strategy: dataset
     dataset_path: ../data/movielens_1m/dataset.tsv
-    splitting:
-      test_splitting:
-        strategy: random_subsampling
-        test_ratio: 0.2
-    models:
-      ItemKNN:
-        meta:
-          hyper_opt_alg: grid
-          save_recs: True
-        neighbors: [50, 100]
-        similarity: cosine
-    evaluation:
-      simple_metrics: [nDCG]
-    top_k: 10
+  splitting:
+    test_splitting:
+      strategy: random_subsampling
+      test_ratio: 0.2
+  models:
+    ItemKNN:
+      meta:
+        hyper_opt_alg: grid
+        save_recs: True
+      neighbors: [50, 100]
+      similarity: cosine
+  evaluation:
+    simple_metrics: [nDCG]
+  top_k: 10
 ```
 
 If you want to explore a basic configuration, and an advanced configuration, please refer to:

@@ -52,11 +52,12 @@ class Evaluator(object):
         self._rel_threshold = data.config.evaluation.relevance_threshold
         self._paired_ttest = self._data.config.evaluation.paired_ttest
         self._metrics = metrics.parse_metrics(data.config.evaluation.simple_metrics)
-        #TODO
-        _validation_metric = getattr(self._params.meta, "validation_metric", "nDCG@10").split("@")[0]
-        if _validation_metric.lower() not in [m.lower() for m in data.config.evaluation.simple_metrics]:
-            raise Exception("Validation metric must be in list of general metrics")
-        self._complex_metrics = getattr(data.config.evaluation, "complex_metrics", {})
+        self._complex_metrics = getattr(data.config.evaluation, "complex_metrics", dict())
+        #TODO integrate complex metrics in validation metric (the problem is that usually complex metrics generate a complex name that does not match with the base name when looking for the loss value)
+        # if _validation_metric.lower() not in [m.lower()
+        #                                       for m in data.config.evaluation.simple_metrics]+[m["metric"].lower()
+        #                                                                                        for m in self._complex_metrics]:
+        #     raise Exception("Validation metric must be in list of general metrics")
         self._test = data.get_test()
 
         self._pop = popularity_utils.Popularity(self._data)
