@@ -51,7 +51,7 @@ experiment:
       neighbors: [uniform, 5, 1000]
       similarity: cosine
       implementation: aiolli
-    BPR_NN:
+    BPRMF_batch:
       meta:
         hyper_max_evals: 5
         hyper_opt_alg: tpe
@@ -64,7 +64,7 @@ experiment:
       lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
       epochs: 300
       batch_size: [256, 512]
-      factors: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+      factors: [32, 64, 128]
       l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
       l_b: 0
     NeuMF:
