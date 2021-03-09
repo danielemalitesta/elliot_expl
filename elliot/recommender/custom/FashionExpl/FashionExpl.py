@@ -16,7 +16,8 @@ from tqdm import tqdm
 
 from elliot.recommender.base_recommender_model import init_charger
 
-import elliot.dataset.samplers.pipeline_features_sampler as pfs
+import elliot.dataset.samplers.pairwise_pipeline_features_sampler as pairpfs
+import elliot.dataset.samplers.pointwise_pipeline_features_sampler as pointpfs
 from elliot.recommender import BaseRecommenderModel
 from elliot.recommender.recommender_utils_mixin import RecMixin
 from elliot.recommender.custom.FashionExpl.FashionExpl_model import FashionExpl_model
@@ -46,15 +47,15 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
             ("_l_att", "l_att", "l_att", 0.000025, None, None),
             ("_l_out", "l_out", "l_out", 0.000025, None, None),
             ("_mlp_color", "mlp_color", "mlp_color", "(64,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
-            ("_cnn_channels", "cnn_channels", "cnn_channels", "(32,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
-            ("_cnn_kernels", "cnn_kernels", "cnn_kernels", "(3,3)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
-            ("_cnn_strides", "cnn_strides", "cnn_strides", "(1,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
+            ("_cnn_channels", "cnn_channels", "cnn_channels", 32, None, None),
+            ("_cnn_kernels", "cnn_kernels", "cnn_kernels", 3, None, None),
+            ("_cnn_strides", "cnn_strides", "cnn_strides", 1, None, None),
             ("_mlp_cnn", "mlp_cnn", "mlp_cnn", "(64,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
             ("_mlp_att", "mlp_att", "mlp_att", "(64,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
             ("_mlp_out", "mlp_out", "mlp_out", "(64,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
             ("_dropout", "dropout", "drop", 0.2, None, None),
             ("_item_feat_agg", "item_feat_agg", "item_feat_aggr", "multiplication", None, None),
-            ("_sampler", "sampler", "sampler", "pairwise", None, None)
+            ("_sampler_str", "sampler", "sampler", "pairwise", None, None)
         ]
 
         self.autoset_params()
@@ -64,13 +65,24 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
 
         item_indices = [self._data.item_mapping[self._data.private_items[item]] for item in range(self._num_items)]
 
-        self._sampler = pfs.Sampler(self._data.i_train_dict,
-                                    item_indices,
-                                    self._data.side_information_data.shapes_src_folder,
-                                    self._data.side_information_data.colors_src_folder,
-                                    self._data.side_information_data.classes_src_folder,
-                                    self._data.output_shape_size,
-                                    self._epochs)
+        if self._sampler_str == 'pairwise':
+            self._sampler = pairpfs.Sampler(self._data.i_train_dict,
+                                            item_indices,
+                                            self._data.side_information_data.shapes_src_folder,
+                                            self._data.side_information_data.colors_src_folder,
+                                            self._data.side_information_data.classes_src_folder,
+                                            self._data.output_shape_size,
+                                            self._epochs)
+        elif self._sampler_str == 'pointwise':
+            self._sampler = pointpfs.Sampler(self._data.i_train_dict,
+                                             item_indices,
+                                             self._data.side_information_data.shapes_src_folder,
+                                             self._data.side_information_data.colors_src_folder,
+                                             self._data.side_information_data.classes_src_folder,
+                                             self._data.output_shape_size,
+                                             self._epochs)
+        else:
+            raise NotImplementedError('This sampler type has not been implemented for this model yet!')
 
         self._next_batch = self._sampler.pipeline(self._data.transactions, self._batch_size)
 
@@ -81,9 +93,19 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                                         self._mlp_color,
                                         self._mlp_att,
                                         self._mlp_out,
+                                        self._mlp_cnn,
+                                        self._cnn_channels,
+                                        self._cnn_kernels,
+                                        self._cnn_strides,
+                                        self._item_feat_agg,
+                                        self._sampler_str,
                                         self._dropout,
                                         self._learning_rate,
                                         self._l_w,
+                                        self._l_color,
+                                        self._l_shape,
+                                        self._l_att,
+                                        self._l_out,
                                         self._num_users,
                                         self._num_items)
 

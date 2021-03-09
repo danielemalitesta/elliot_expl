@@ -17,9 +17,19 @@ class FashionExpl_model(keras.Model):
                  mlp_color=(64,),
                  mlp_att=(64,),
                  mlp_out=(64,),
+                 mlp_cnn=(64,),
+                 cnn_channels=64,
+                 cnn_kernels=3,
+                 cnn_strides=1,
+                 item_feat_agg='multiplication',
+                 sampler_str='pairwise',
                  dropout=0.2,
                  learning_rate=0.001,
                  l_w=0,
+                 l_color=0,
+                 l_shape=0,
+                 l_att=0,
+                 l_out=0,
                  num_users=100,
                  num_items=100,
                  name="FashionExpl",
@@ -30,7 +40,17 @@ class FashionExpl_model(keras.Model):
         self._mlp_color = mlp_color
         self._mlp_att = mlp_att
         self._mlp_out = mlp_out
+        self._mlp_cnn = mlp_cnn
+        self._cnn_channels = cnn_channels
+        self._cnn_kernels = cnn_kernels
+        self._cnn_strides = cnn_strides
+        self._item_feat_agg = item_feat_agg
+        self._sampler_str = sampler_str
         self.l_w = l_w
+        self._l_color = l_color
+        self._l_shape = l_shape
+        self._l_att = l_att
+        self._l_out = l_out
         self._learning_rate = learning_rate
         self._num_items = num_items
         self._num_users = num_users
@@ -52,6 +72,8 @@ class FashionExpl_model(keras.Model):
         self.create_attention_weights()
         self.create_output_weights()
 
+        self.loss_pointwise = keras.losses.BinaryCrossentropy()
+
         self.optimizer = keras.optimizers.Adam(learning_rate=self._learning_rate)
 
     def create_color_weights(self):
@@ -61,7 +83,11 @@ class FashionExpl_model(keras.Model):
         self.color_encoder.add(keras.layers.Dense(units=self._factors, use_bias=False))
 
     def create_shape_weights(self):
-        self.shape_encoder.add(keras.layers.Conv2D(filters=64, kernel_size=(5, 5), padding='same', activation='relu'))
+        self.shape_encoder.add(keras.layers.Conv2D(filters=self._cnn_channels,
+                                                   kernel_size=(self._cnn_kernels, self._cnn_kernels),
+                                                   strides=(self._cnn_strides, self._cnn_strides),
+                                                   padding='same',
+                                                   activation='relu'))
         self.shape_encoder.add(keras.layers.MaxPool2D(padding='same'))
         self.shape_encoder.add(keras.layers.GlobalAveragePooling2D())
         self.shape_encoder.add(keras.layers.Dropout(rate=self._dropout))
@@ -149,45 +175,79 @@ class FashionExpl_model(keras.Model):
 
     # @tf.function
     def train_step(self, batch):
-        user, pos, shapes_pos, colors_pos, classes_pos, neg, shapes_neg, colors_neg, classes_neg = batch
-        with tf.GradientTape() as t:
-            # Clean Inference
-            xu_pos, \
-                gamma_u, \
-                gamma_i_pos, \
-                color_i_pos, \
-                shape_i_pos, \
-                class_i_pos, \
-                attention_pos = self(inputs=(user, pos, shapes_pos, colors_pos, classes_pos), training=True)
+        if self._sampler_str == 'pairwise':
+            user, pos, shapes_pos, colors_pos, classes_pos, neg, shapes_neg, colors_neg, classes_neg = batch
+            with tf.GradientTape() as t:
+                # Clean Inference
+                xu_pos, \
+                    gamma_u, \
+                    gamma_i_pos, \
+                    color_i_pos, \
+                    shape_i_pos, \
+                    class_i_pos, \
+                    attention_pos = self(inputs=(user, pos, shapes_pos, colors_pos, classes_pos), training=True)
 
-            xu_neg, \
-                _, \
-                gamma_i_neg, \
-                color_i_neg, \
-                shape_i_neg, \
-                class_i_neg, \
-                attention_neg = self(inputs=(user, neg, shapes_neg, colors_neg, classes_neg), training=True)
+                xu_neg, \
+                    _, \
+                    gamma_i_neg, \
+                    color_i_neg, \
+                    shape_i_neg, \
+                    class_i_neg, \
+                    attention_neg = self(inputs=(user, neg, shapes_neg, colors_neg, classes_neg), training=True)
 
-            result = tf.clip_by_value(xu_pos - xu_neg, -80.0, 1e8)
-            loss = tf.reduce_sum(tf.nn.softplus(-result))
+                result = tf.clip_by_value(xu_pos - xu_neg, -80.0, 1e8)
+                loss = tf.reduce_sum(tf.nn.softplus(-result))
 
-            # Regularization Component
-            reg_loss = self.l_w * tf.reduce_sum([tf.nn.l2_loss(gamma_u),
-                                                 tf.nn.l2_loss(gamma_i_pos), tf.nn.l2_loss(gamma_i_neg),
-                                                 tf.nn.l2_loss(color_i_pos), tf.nn.l2_loss(color_i_neg),
-                                                 tf.nn.l2_loss(shape_i_pos), tf.nn.l2_loss(shape_i_neg),
-                                                 tf.nn.l2_loss(class_i_pos), tf.nn.l2_loss(class_i_neg),
-                                                 *[tf.nn.l2_loss(weight) for weight in
-                                                   self.color_encoder.trainable_weights],
-                                                 *[tf.nn.l2_loss(weight) for weight in
-                                                   self.shape_encoder.trainable_weights],
-                                                 *[tf.nn.l2_loss(value) for _, value in
-                                                   self.attention_network.items()],
-                                                 *[tf.nn.l2_loss(weight) for weight in
-                                                   self.mlp_output.trainable_weights]])
+                # Regularization Component
+                reg_loss = self.l_w * tf.reduce_sum([tf.nn.l2_loss(gamma_u),
+                                                     tf.nn.l2_loss(gamma_i_pos), tf.nn.l2_loss(gamma_i_neg),
+                                                     tf.nn.l2_loss(color_i_pos), tf.nn.l2_loss(color_i_neg),
+                                                     tf.nn.l2_loss(shape_i_pos), tf.nn.l2_loss(shape_i_neg),
+                                                     tf.nn.l2_loss(class_i_pos), tf.nn.l2_loss(class_i_neg),
+                                                     *[tf.nn.l2_loss(weight) for weight in
+                                                       self.color_encoder.trainable_weights],
+                                                     *[tf.nn.l2_loss(weight) for weight in
+                                                       self.shape_encoder.trainable_weights],
+                                                     *[tf.nn.l2_loss(value) for _, value in
+                                                       self.attention_network.items()],
+                                                     *[tf.nn.l2_loss(weight) for weight in
+                                                       self.mlp_output.trainable_weights]])
 
-            # Loss to be optimized
-            loss += reg_loss
+                # Loss to be optimized
+                loss += reg_loss
+        elif self._sampler_str == 'pointwise':
+            user, item, pos_neg, im, col, class_ = batch
+            with tf.GradientTape() as t:
+                # Clean Inference
+                xui, \
+                    gamma_u, \
+                    gamma_i, \
+                    color_i, \
+                    shape_i, \
+                    class_i, \
+                    attention_pos = self(inputs=(user, item, im, col, class_), training=True)
+
+                loss = self.loss_pointwise(xui, pos_neg)
+
+                # Regularization Component
+                reg_loss = self.l_w * tf.reduce_sum([tf.nn.l2_loss(gamma_u),
+                                                     tf.nn.l2_loss(gamma_i),
+                                                     tf.nn.l2_loss(color_i),
+                                                     tf.nn.l2_loss(shape_i),
+                                                     tf.nn.l2_loss(class_i),
+                                                     *[tf.nn.l2_loss(weight) for weight in
+                                                       self.color_encoder.trainable_weights],
+                                                     *[tf.nn.l2_loss(weight) for weight in
+                                                       self.shape_encoder.trainable_weights],
+                                                     *[tf.nn.l2_loss(value) for _, value in
+                                                       self.attention_network.items()],
+                                                     *[tf.nn.l2_loss(weight) for weight in
+                                                       self.mlp_output.trainable_weights]])
+
+                # Loss to be optimized
+                loss += reg_loss
+        else:
+            raise NotImplementedError('This sampler type has not been implemented for this model yet!')
 
         params = [
             self.Gu,

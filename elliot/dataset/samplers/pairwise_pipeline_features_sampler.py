@@ -47,12 +47,12 @@ class Sampler:
         try:
             im_pos.load()
         except ValueError:
-            print(f'Image at path {pos}.jpg was not loaded correctly!')
+            print(f'Image at path {pos}.tiff was not loaded correctly!')
 
         try:
             im_neg.load()
         except ValueError:
-            print(f'Image at path {neg}.jpg was not loaded correctly!')
+            print(f'Image at path {neg}.tiff was not loaded correctly!')
 
         im_pos = np.expand_dims(np.array(im_pos.resize(self._output_shape_size)) / np.float32(255.0), axis=2)
         im_neg = np.expand_dims(np.array(im_neg.resize(self._output_shape_size)) / np.float32(255.0), axis=2)
@@ -141,7 +141,7 @@ class Sampler:
         try:
             im.load()
         except ValueError:
-            print(f'Image at path {item}.jpg was not loaded correctly!')
+            print(f'Image at path {item}.tiff was not loaded correctly!')
 
         im = np.expand_dims(np.array(im.resize(self._output_shape_size)) / np.float32(255.0), axis=2)
         col = col / np.max(np.abs(col))

@@ -170,20 +170,3 @@ experiment:
       prob_keep_dropout: [uniform, 0, 1]
       l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
       l_v: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
-#    FashionExpl:
-#      meta:
-#        verbose: True
-#        save_recs: False
-#        save_weights: True
-#        validation_rate: 5
-#        validation_metric: nDCG
-#        restore: False
-#      factors: 128
-#      mlp_color: (64,)
-#      mlp_att: (64,)
-#      mlp_out: (64,)
-#      dropout: 0.6
-#      batch_size: 256
-#      epochs: 80
-#      lr: 0.0001
-#      l_w: 0.0000001
