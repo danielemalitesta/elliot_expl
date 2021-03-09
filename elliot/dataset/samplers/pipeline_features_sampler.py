@@ -35,8 +35,8 @@ class Sampler:
 
     def read_images_triple(self, user, pos, neg):
         # load positive and negative item images
-        im_pos = Image.open(self._shapes_path + str(pos.numpy()) + '.jpg')
-        im_neg = Image.open(self._shapes_path + str(neg.numpy()) + '.jpg')
+        im_pos = Image.open(self._shapes_path + str(pos.numpy()) + '.tiff')
+        im_neg = Image.open(self._shapes_path + str(neg.numpy()) + '.tiff')
 
         col_pos = np.load(self._colors_path + str(pos.numpy()) + '.npy')
         col_neg = np.load(self._colors_path + str(neg.numpy()) + '.npy')
@@ -54,8 +54,8 @@ class Sampler:
         except ValueError:
             print(f'Image at path {neg}.jpg was not loaded correctly!')
 
-        im_pos = (np.array(im_pos.resize(self._output_shape_size)) - np.float32(127.5)) / np.float32(127.5)
-        im_neg = (np.array(im_neg.resize(self._output_shape_size)) - np.float32(127.5)) / np.float32(127.5)
+        im_pos = np.expand_dims(np.array(im_pos.resize(self._output_shape_size)) / np.float32(255.0), axis=2)
+        im_neg = np.expand_dims(np.array(im_neg.resize(self._output_shape_size)) / np.float32(255.0), axis=2)
 
         col_pos = col_pos / np.max(np.abs(col_pos))
         col_neg = col_neg / np.max(np.abs(col_neg))
@@ -134,7 +134,7 @@ class Sampler:
     # this is only for evaluation
     def read_image(self, item):
         # load positive image
-        im = Image.open(self._shapes_path + str(item.numpy()) + '.jpg')
+        im = Image.open(self._shapes_path + str(item.numpy()) + '.tiff')
         col = np.load(self._colors_path + str(item.numpy()) + '.npy')
         class_ = np.load(self._classes_path + str(item.numpy()) + '.npy')
 
@@ -143,7 +143,7 @@ class Sampler:
         except ValueError:
             print(f'Image at path {item}.jpg was not loaded correctly!')
 
-        im = (np.array(im.resize(self._output_shape_size)) - np.float32(127.5)) / np.float32(127.5)
+        im = np.expand_dims(np.array(im.resize(self._output_shape_size)) / np.float32(255.0), axis=2)
         col = col / np.max(np.abs(col))
 
         return item, im, col, class_

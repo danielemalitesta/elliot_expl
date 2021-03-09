@@ -60,10 +60,15 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
         self._sampler = pfs.Sampler(self._data.i_train_dict,
                                     item_indices,
                                     self._data.side_information_data.shapes_src_folder,
-                                    self._data.side_information.colors_src_folder,
-                                    self._data.side_information.classes_src_folder,
+                                    self._data.side_information_data.colors_src_folder,
+                                    self._data.side_information_data.classes_src_folder,
                                     self._data.output_shape_size,
                                     self._epochs)
+
+        self._next_batch = self._sampler.pipeline(self._data.transactions, self._batch_size)
+
+        # only for evaluation purposes
+        self._next_eval_batch = self._sampler.pipeline_eval(self._batch_size)
 
         self._model = FashionExpl_model(self._factors,
                                         self._mlp_color,
@@ -87,36 +92,44 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
             return self.restore_weights()
 
         best_metric_value = 0
+        loss = 0
+        steps = 0
+        it = 0
 
-        for it in range(self._epochs):
-            loss = 0
-            steps = 0
-            with tqdm(total=int(self._num_users // self._batch_size), disable=not self._verbose) as t:
-                for batch in self._sampler.step(self._num_users, self._batch_size):
-                    steps += 1
-                    loss += self._model.train_step(batch)
-                    t.set_postfix({'loss': f'{loss.numpy()/steps:.5f}'})
-                    t.update()
+        with tqdm(total=int(self._data.transactions // self._batch_size), disable=not self._verbose) as t:
+            for batch in self._next_batch:
+                steps += 1
+                loss += self._model.train_step(batch)
+                t.set_postfix({'loss': f'{loss.numpy() / steps:.5f}'})
+                t.update()
 
-            if not (it + 1) % self._validation_rate:
-                recs = self.get_recommendations(self.evaluator.get_needed_recommendations())
-                result_dict = self.evaluator.eval(recs)
-                self._results.append(result_dict)
+                # epoch is over
+                if steps == self._data.transactions // self._batch_size:
+                    t.reset()
+                    if not (it + 1) % self._validation_rate:
+                        recs = self.get_recommendations(self.evaluator.get_needed_recommendations())
+                        result_dict = self.evaluator.eval(recs)
+                        self._results.append(result_dict)
 
-                print(f'Epoch {(it + 1)}/{self._epochs} loss {loss/steps:.5f}')
+                        self.logger.info(f'Epoch {(it + 1)}/{self._epochs} loss {loss / steps:.3f}')
 
-                if self._results[-1][self._validation_k]["val_results"][self._validation_metric] > best_metric_value:
-                    print("******************************************")
-                    best_metric_value = self._results[-1][self._validation_k]["val_results"][self._validation_metric]
-                    if self._save_weights:
-                        self._model.save_weights(self._saving_filepath)
-                    if self._save_recs:
-                        store_recommendation(recs, self._config.path_output_rec_result + f"{self.name}-it:{it + 1}.tsv")
+                        if self._results[-1][self._validation_k]["val_results"][
+                           self._validation_metric] > best_metric_value:
+                            best_metric_value = self._results[-1][self._validation_k]["val_results"][
+                                self._validation_metric]
+                            if self._save_weights:
+                                self._model.save_weights(self._saving_filepath)
+                            if self._save_recs:
+                                store_recommendation(recs,
+                                                     self._config.path_output_rec_result + f"{self.name}-it:{it + 1}.tsv")
+                    it += 1
+                    steps = 0
+                    loss = 0
 
     def get_recommendations(self, k: int = 100):
         predictions_top_k = {}
         for index, offset in enumerate(range(0, self._num_users, self._params.batch_size)):
-            offset_stop = min(offset+self._params.batch_size, self._num_users)
+            offset_stop = min(offset + self._params.batch_size, self._num_users)
             predictions = self._model.predict(offset, offset_stop)
             mask = self.get_train_mask(offset, offset_stop)
             v, i = self._model.get_top_k(predictions, mask, k=k)

@@ -7,17 +7,17 @@ experiment:
     validation_path: ../data/{0}/validationset.tsv
     test_path: ../data/{0}/testset.tsv
     side_information:
-      visual_features: ../data/{0}/original/cnn_features_vgg19_fc2.npy
-      visual_pca_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
-      visual_feat_map_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
-      visual_color_features: ../data/{0}/original/color_features_bins8.npy
-      visual_class_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
+#      visual_features: ../data/{0}/original/cnn_features_vgg19_fc2.npy
+#      visual_pca_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
+#      visual_feat_map_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
+#      visual_color_features: ../data/{0}/original/color_features_bins8.npy
+#      visual_class_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
       item_mapping: ../data/{0}/visual_feats.tsv
-      images_src_folder: ../data/{0}/original/images/
+#      images_src_folder: ../data/{0}/original/images/
       shapes_src_folder: ../data/{0}/original/shapes/
       colors_src_folder: ../data/{0}/original/colors/
       classes_src_folder: ../data/{0}/original/classes/
-      output_image_size: (224,224)
+#      output_image_size: (224,224)
       output_shape_size: (224,224)
   dataset: amazon_baby
   top_k: 50
@@ -56,22 +56,22 @@ experiment:
 #      update_users: True
 #      update_items: True
 #      update_bias: True
-    VBPR:
-      meta:
-        verbose: True
-        validation_rate: 10
-        save_weights: False
-        save_recs: False
-        validation_metric: nDCG@10
-        restore_epoch: -1
-      lr: 0.0005
-      epochs: 50
-      factors: 100
-      factors_d: 20
-      batch_size: 128
-      l_w: 0.000025
-      l_b: 0
-      l_e: 0.002
+#    VBPR:
+#      meta:
+#        verbose: True
+#        validation_rate: 10
+#        save_weights: False
+#        save_recs: False
+#        validation_metric: nDCG@10
+#        restore_epoch: -1
+#      lr: 0.0005
+#      epochs: 50
+#      factors: 100
+#      factors_d: 20
+#      batch_size: 128
+#      l_w: 0.000025
+#      l_b: 0
+#      l_e: 0.002
 #    DeepStyle:
 #      meta:
 #        verbose: True
@@ -114,7 +114,23 @@ experiment:
 #      batch_size: 128
 #      lambda_1: 0.0001
 #      lambda_2: 1.0
-    VNPR:
+#    VNPR:
+#      meta:
+#        verbose: True
+#        save_recs: False
+#        save_weights: True
+#        validation_rate: 5
+#        validation_metric: nDCG
+#        restore: False
+#      mf_factors: 300
+#      mlp_hidden_size: (128, 64, 1)
+#      prob_keep_dropout: 0.6
+#      batch_size: 1024
+#      epochs: 80
+#      lr: 0.0001
+#      l_w: 0.0000001
+#      l_v: 0.000001
+    FashionExpl:
       meta:
         verbose: True
         save_recs: False
@@ -122,11 +138,12 @@ experiment:
         validation_rate: 5
         validation_metric: nDCG
         restore: False
-      mf_factors: 300
-      mlp_hidden_size: (128, 64, 1)
-      prob_keep_dropout: 0.6
-      batch_size: 1024
+      factors: 128
+      mlp_color: (64,)
+      mlp_att: (64,)
+      mlp_out: (64,)
+      dropout: 0.6
+      batch_size: 256
       epochs: 80
       lr: 0.0001
       l_w: 0.0000001
-      l_v: 0.000001

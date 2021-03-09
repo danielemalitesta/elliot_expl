@@ -64,12 +64,12 @@ class FashionExpl_model(keras.Model):
         self.shape_encoder.add(keras.layers.Conv2D(filters=64, kernel_size=(5, 5), padding='same', activation='relu'))
         self.shape_encoder.add(keras.layers.MaxPool2D(padding='same'))
         self.shape_encoder.add(keras.layers.GlobalAveragePooling2D())
-        self.shape_encoder.add(keras.layers.Dropout(rate=0.5))
+        self.shape_encoder.add(keras.layers.Dropout(rate=self._dropout))
         self.shape_encoder.add(keras.layers.Dense(units=self._factors, use_bias=False))
 
     def create_output_weights(self):
         self.mlp_output.add(keras.layers.Dropout(self._dropout))
-        for units in self._mlp_output:
+        for units in self._mlp_out:
             self.mlp_output.add(keras.layers.Dense(units, activation='relu'))
         self.mlp_output.add(keras.layers.Dense(units=1, use_bias=False))
 
@@ -98,15 +98,13 @@ class FashionExpl_model(keras.Model):
                     dtype=tf.float32
                 )
 
-    @tf.function
-    def propagate_attention(self, inputs):
-        g_u, colors, edges, classes = inputs['gamma_u'], inputs['colors'], inputs['edges'], inputs['classes']
+    # @tf.function
+    def propagate_attention(self, g_u, colors, shapes, classes):
         all_a_i_l = None
-
         for layer in range(len(self.attention_layers)):
             if layer == 0:
                 all_a_i_l = tf.tensordot(
-                    tf.expand_dims(g_u, 1) * tf.concat([colors, edges, classes], axis=1),
+                    tf.expand_dims(g_u, 1) * tf.concat([colors, shapes, classes], axis=1),
                     self.attention_network['W_{}'.format(layer + 1)],
                     axes=[[2], [0]]
                 ) + self.attention_network['b_{}'.format(layer + 1)]
@@ -121,34 +119,22 @@ class FashionExpl_model(keras.Model):
         all_alpha = tf.nn.softmax(all_a_i_l, axis=1)
         return all_alpha
 
-    @tf.function
+    # @tf.function
     def call(self, inputs, training=None, mask=None):
-        user, item, shapes, colors, classes = inputs
+        user, item, shapes, colors, class_i = inputs
 
-        # USER
-        # user collaborative profile
-        gamma_u = tf.squeeze(tf.nn.embedding_lookup(self.Gu, user))
-
-        # ITEM
-        # item collaborative profile
-        gamma_i = tf.squeeze(tf.nn.embedding_lookup(self.Gi, item))
-        # item color features
+        gamma_u = tf.nn.embedding_lookup(self.Gu, user)
+        gamma_i = tf.nn.embedding_lookup(self.Gi, item)
         color_i = tf.expand_dims(self.color_encoder(colors), 1)
-        # item edge features
-        shapes_i = tf.expand_dims(self.shape_encoder(shapes), 1)
+        shape_i = tf.expand_dims(self.shape_encoder(shapes), 1)
 
-        # attention network
-        attention_inputs = {
-            'gamma_u': gamma_u,
-            'colors': color_i,
-            'edges': shapes_i,
-            'classes': classes
-        }
-        all_attention = self.propagate_attention(attention_inputs)
+        all_attention = self.propagate_attention(gamma_u, color_i, shape_i, class_i)
         weighted_features = tf.reduce_sum(tf.multiply(
             all_attention,
-            tf.concat([color_i, shapes_i, classes], axis=1)
+            tf.concat([color_i, shape_i, class_i], axis=1)
         ), axis=1)
+
+        # INSERT MLP OUTPUT FOR SCORE PREDICTION
 
         # score prediction
         xui = tf.reduce_sum(gamma_u * weighted_features * gamma_i, axis=1)
@@ -157,11 +143,11 @@ class FashionExpl_model(keras.Model):
                gamma_u, \
                gamma_i, \
                color_i, \
-               shapes_i, \
-               classes, \
+               shape_i, \
+               class_i, \
                all_attention
 
-    @tf.function
+    # @tf.function
     def train_step(self, batch):
         user, pos, shapes_pos, colors_pos, classes_pos, neg, shapes_neg, colors_neg, classes_neg = batch
         with tf.GradientTape() as t:
