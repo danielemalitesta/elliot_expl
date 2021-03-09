@@ -72,7 +72,21 @@ experiment:
 #      update_negative_item_factors: True
 #      update_users: True
 #      update_items: True
-#      update_bias: True
+##      update_bias: True
+#    NeuMF:
+#      meta:
+#        hyper_max_evals: 5
+#        hyper_opt_alg: tpe
+#        validation_rate: 5
+#      lr: 1
+#      batch_size: 512
+#      epochs: 50
+#      mf_factors: 32
+#      mlp_factors: 16
+#      mlp_hidden_size: [ (32, 16, 8), (64, 32, 16) ]
+#      prob_keep_dropout: 0.2
+#      is_mf_train: True
+#      is_mlp_train: True
 #    VBPR:
 #      meta:
 #        hyper_max_evals: 5
@@ -121,8 +135,8 @@ experiment:
       factors: [32, 64, 128]
       batch_size: [256, 512]
       l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
-      layers_component: [(64, 1), (128, 64, 1)]
-      layers_item: [(64, 1), (128, 64, 1)]
+      layers_component: [ (64, 1), (128, 64, 1) ]
+      layers_item: [ (64, 1), (128, 64, 1) ]
 #    DVBPR:
 #      meta:
 #        hyper_max_evals: 5
