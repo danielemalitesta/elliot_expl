@@ -51,7 +51,7 @@ experiment:
       neighbors: [uniform, 5, 1000]
       similarity: cosine
       implementation: aiolli
-    BPRMF:
+    BPR_NN:
       meta:
         hyper_max_evals: 5
         hyper_opt_alg: tpe
@@ -64,15 +64,9 @@ experiment:
       lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
       epochs: 300
       batch_size: [256, 512]
-      embed_k: [32, 64, 128]
-      bias_regularization: 0
-      user_regularization: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
-      positive_item_regularization: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
-      negative_item_regularization: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
-      update_negative_item_factors: True
-      update_users: True
-      update_items: True
-      update_bias: True
+      factors: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+      l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+      l_b: 0
     NeuMF:
       meta:
         hyper_max_evals: 5
