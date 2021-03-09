@@ -10,9 +10,13 @@ experiment:
       visual_features: ../data/{0}/original/cnn_features_vgg19_fc2.npy
       visual_pca_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
       visual_feat_map_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
+      visual_color_features: ../data/{0}/original/color_features_bins8.npy
+      visual_class_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
       item_mapping: ../data/{0}/visual_feats.tsv
       images_src_folder: ../data/{0}/original/images/
       shapes_src_folder: ../data/{0}/original/shapes/
+      colors_src_folder: ../data/{0}/original/colors/
+      classes_src_folder: ../data/{0}/original/classes/
       output_image_size: (224,224)
       output_shape_size: (224,224)
   dataset: amazon_baby

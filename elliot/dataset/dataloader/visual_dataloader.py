@@ -76,6 +76,8 @@ class VisualLoader:
             visual_feature_path = getattr(config.data_config.side_information, "visual_features", None)
             visual_pca_feature_path = getattr(config.data_config.side_information, "visual_pca_features", None)
             visual_feat_map_feature_path = getattr(config.data_config.side_information, "visual_feat_map_features", None)
+            visual_color_feature_path = getattr(config.data_config.side_information, "visual_color_features", None)
+            visual_class_feature_path = getattr(config.data_config.side_information, "visual_class_features", None)
             item_mapping_path = getattr(config.data_config.side_information, "item_mapping", None)
             image_size_tuple = getattr(config.data_config.side_information, "output_image_size", None)
             shape_size_tuple = getattr(config.data_config.side_information, "output_shape_size", None)
@@ -86,11 +88,17 @@ class VisualLoader:
                 feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
             elif visual_feat_map_feature_path and item_mapping_path:
                 feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
+            elif visual_color_feature_path and item_mapping_path:
+                feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
+            elif visual_class_feature_path and item_mapping_path:
+                feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
             else:
                 feature_set = {}
 
             images_src_folder = getattr(config.data_config.side_information, "images_src_folder", None)
             shapes_src_folder = getattr(config.data_config.side_information, "shapes_src_folder", None)
+            colors_src_folder = getattr(config.data_config.side_information, "colors_src_folder", None)
+            classes_src_folder = getattr(config.data_config.side_information, "classes_src_folder", None)
 
             if images_src_folder:
                 image_set = {int(path.split(".")[0]) for path in os.listdir(images_src_folder)}
@@ -102,14 +110,34 @@ class VisualLoader:
             else:
                 shape_set = {}
 
+            if colors_src_folder:
+                color_set = {int(path.split(".")[0]) for path in os.listdir(colors_src_folder)}
+            else:
+                color_set = {}
+
+            if classes_src_folder:
+                class_set = {int(path.split(".")[0]) for path in os.listdir(classes_src_folder)}
+            else:
+                class_set = {}
+
             if feature_set and image_set:
                 visual_set = feature_set and image_set
             elif feature_set and shape_set:
                 visual_set = feature_set and shape_set
+            elif feature_set and color_set:
+                visual_set = feature_set and color_set
+            elif feature_set and class_set:
+                visual_set = feature_set and class_set
             elif feature_set:
                 visual_set = feature_set
             elif image_set:
                 visual_set = image_set
+            elif shape_set:
+                visual_set = shape_set
+            elif color_set:
+                visual_set = color_set
+            elif class_set:
+                visual_set = class_set
             else:
                 visual_set = {}
 
@@ -122,9 +150,13 @@ class VisualLoader:
             self.side_information_data.visual_feature_path = visual_feature_path
             self.side_information_data.visual_pca_feature_path = visual_pca_feature_path
             self.side_information_data.visual_feat_map_feature_path = visual_feat_map_feature_path
+            self.side_information_data.visual_color_feature_path = visual_color_feature_path
+            self.side_information_data.visual_class_feature_path = visual_class_feature_path
             self.side_information_data.item_mapping_path = item_mapping_path
             self.side_information_data.images_src_folder = images_src_folder
             self.side_information_data.shapes_src_folder = shapes_src_folder
+            self.side_information_data.colors_src_folder = colors_src_folder
+            self.side_information_data.classes_src_folder = classes_src_folder
             self.side_information_data.image_size_tuple = image_size_tuple
             self.side_information_data.shape_size_tuple = shape_size_tuple
 
@@ -153,6 +185,8 @@ class VisualLoader:
             visual_feature_path = getattr(config.data_config.side_information, "visual_features", None)
             visual_pca_feature_path = getattr(config.data_config.side_information, "visual_pca_features", None)
             visual_feat_map_feature_path = getattr(config.data_config.side_information, "visual_feat_map_features", None)
+            visual_color_feature_path = getattr(config.data_config.side_information, "visual_color_features", None)
+            visual_class_feature_path = getattr(config.data_config.side_information, "visual_class_features", None)
             item_mapping_path = getattr(config.data_config.side_information, "item_mapping", None)
             image_size_tuple = getattr(config.data_config.side_information, "output_image_size", None)
             shape_size_tuple = getattr(config.data_config.side_information, "output_shape_size", None)
@@ -163,11 +197,17 @@ class VisualLoader:
                 feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
             elif visual_feat_map_feature_path and item_mapping_path:
                 feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
+            elif visual_color_feature_path and item_mapping_path:
+                feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
+            elif visual_class_feature_path and item_mapping_path:
+                feature_set = set(pd.read_csv(item_mapping_path, sep="\t", header=None)[0].unique().tolist())
             else:
                 feature_set = {}
 
             images_src_folder = getattr(config.data_config.side_information, "images_src_folder", None)
             shapes_src_folder = getattr(config.data_config.side_information, "shapes_src_folder", None)
+            colors_src_folder = getattr(config.data_config.side_information, "colors_src_folder", None)
+            classes_src_folder = getattr(config.data_config.side_information, "classes_src_folder", None)
 
             if images_src_folder:
                 image_set = {int(path.split(".")[0]) for path in os.listdir(images_src_folder)}
@@ -179,14 +219,34 @@ class VisualLoader:
             else:
                 shape_set = {}
 
+            if colors_src_folder:
+                color_set = {int(path.split(".")[0]) for path in os.listdir(colors_src_folder)}
+            else:
+                color_set = {}
+
+            if classes_src_folder:
+                class_set = {int(path.split(".")[0]) for path in os.listdir(classes_src_folder)}
+            else:
+                class_set = {}
+
             if feature_set and image_set:
                 visual_set = feature_set and image_set
             elif feature_set and shape_set:
                 visual_set = feature_set and shape_set
+            elif feature_set and color_set:
+                visual_set = feature_set and color_set
+            elif feature_set and class_set:
+                visual_set = feature_set and class_set
             elif feature_set:
                 visual_set = feature_set
             elif image_set:
                 visual_set = image_set
+            elif shape_set:
+                visual_set = shape_set
+            elif color_set:
+                visual_set = color_set
+            elif class_set:
+                visual_set = class_set
             else:
                 visual_set = {}
 
@@ -198,9 +258,13 @@ class VisualLoader:
             self.side_information_data.visual_feature_path = visual_feature_path
             self.side_information_data.visual_pca_feature_path = visual_pca_feature_path
             self.side_information_data.visual_feat_map_feature_path = visual_feat_map_feature_path
+            self.side_information_data.visual_color_feature_path = visual_color_feature_path
+            self.side_information_data.visual_class_feature_path = visual_class_feature_path
             self.side_information_data.item_mapping_path = item_mapping_path
             self.side_information_data.images_src_folder = images_src_folder
             self.side_information_data.shapes_src_folder = shapes_src_folder
+            self.side_information_data.colors_src_folder = colors_src_folder
+            self.side_information_data.classes_src_folder = classes_src_folder
             self.side_information_data.image_size_tuple = image_size_tuple
             self.side_information_data.shape_size_tuple = shape_size_tuple
 
@@ -266,20 +330,27 @@ class VisualLoader:
         visual_feature_path = getattr(self.config.data_config.side_information, "visual_features", None)
         visual_pca_feature_path = getattr(self.config.data_config.side_information, "visual_pca_features", None)
         visual_feat_map_feature_path = getattr(self.config.data_config.side_information, "visual_feat_map_features", None)
+        visual_color_feature_path = getattr(self.config.data_config.side_information, "visual_color_features", None)
+        visual_class_feature_path = getattr(self.config.data_config.side_information, "visual_class_features", None)
         item_mapping_path = getattr(self.config.data_config.side_information, "item_mapping", None)
         image_size_tuple = getattr(self.config.data_config.side_information, "output_image_size", None)
         shape_size_tuple = getattr(self.config.data_config.side_information, "output_shape_size", None)
         images_src_folder = getattr(self.config.data_config.side_information, "images_src_folder", None)
         shapes_src_folder = getattr(self.config.data_config.side_information, "shapes_src_folder", None)
-
+        colors_src_folder = getattr(self.config.data_config.side_information, "colors_src_folder", None)
+        classes_src_folder = getattr(self.config.data_config.side_information, "classes_src_folder", None)
         side_information_data = SimpleNamespace()
 
         side_information_data.visual_feature_path = visual_feature_path
         side_information_data.visual_pca_feature_path = visual_pca_feature_path
         side_information_data.visual_feat_map_feature_path = visual_feat_map_feature_path
+        side_information_data.visual_color_feature_path = visual_color_feature_path
+        side_information_data.visual_class_feature_path = visual_class_feature_path
         side_information_data.item_mapping_path = item_mapping_path
         side_information_data.images_src_folder = images_src_folder
         side_information_data.shapes_src_folder = shapes_src_folder
+        side_information_data.colors_src_folder = colors_src_folder
+        side_information_data.classes_src_folder = classes_src_folder
         side_information_data.image_size_tuple = image_size_tuple
         side_information_data.shape_size_tuple = shape_size_tuple
 
@@ -356,6 +427,26 @@ class VisualDataObject:
                 self.side_information_data.shape_size_tuple) if self.side_information_data.shape_size_tuple else None
             self.item_mapping = pd.read_csv(self.side_information_data.item_mapping_path, sep="\t", header=None)
             self.item_mapping = {i: j for i, j in zip(self.item_mapping[0], self.item_mapping[1])}
+
+        if self.side_information_data.colors_src_folder:
+            self.item_mapping = pd.read_csv(self.side_information_data.item_mapping_path, sep="\t", header=None)
+            self.item_mapping = {i: j for i, j in zip(self.item_mapping[0], self.item_mapping[1])}
+
+        if self.side_information_data.classes_src_folder:
+            self.item_mapping = pd.read_csv(self.side_information_data.item_mapping_path, sep="\t", header=None)
+            self.item_mapping = {i: j for i, j in zip(self.item_mapping[0], self.item_mapping[1])}
+
+        if self.side_information_data.visual_color_feature_path:
+            self.visual_color_features = np.load(self.side_information_data.visual_color_feature_path)
+            if (not self.side_information_data.visual_feature_path) and (not self.side_information_data.visual_color_feature_path):
+                self.item_mapping = pd.read_csv(self.side_information_data.item_mapping_path, sep="\t", header=None)
+                self.item_mapping = {i: j for i, j in zip(self.item_mapping[0], self.item_mapping[1])}
+
+        if self.side_information_data.visual_class_feature_path:
+            self.visual_class_features = np.load(self.side_information_data.visual_class_feature_path)
+            if (not self.side_information_data.visual_feature_path) and (not self.side_information_data.visual_class_feature_path):
+                self.item_mapping = pd.read_csv(self.side_information_data.item_mapping_path, sep="\t", header=None)
+                self.item_mapping = {i: j for i, j in zip(self.item_mapping[0], self.item_mapping[1])}
 
         self.users = list(self.train_dict.keys())
         self.num_users = len(self.users)

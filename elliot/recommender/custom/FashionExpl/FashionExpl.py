@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 from elliot.recommender.base_recommender_model import init_charger
 
-import elliot.dataset.samplers.custom_sparse_sampler as css
+import elliot.dataset.samplers.pipeline_features_sampler as pfs
 from elliot.recommender import BaseRecommenderModel
 from elliot.recommender.recommender_utils_mixin import RecMixin
 from elliot.recommender.custom.FashionExpl.FashionExpl_model import FashionExpl_model
@@ -55,9 +55,15 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
         if self._batch_size < 1:
             self._batch_size = self._data.transactions
 
-        self._sampler = css.Sampler(self._data.i_train_dict, self._data.sp_i_train)
-
         item_indices = [self._data.item_mapping[self._data.private_items[item]] for item in range(self._num_items)]
+
+        self._sampler = pfs.Sampler(self._data.i_train_dict,
+                                    item_indices,
+                                    self._data.side_information_data.shapes_src_folder,
+                                    self._data.side_information.colors_src_folder,
+                                    self._data.side_information.classes_src_folder,
+                                    self._data.output_shape_size,
+                                    self._epochs)
 
         self._model = FashionExpl_model(self._factors,
                                         self._mlp_color,
