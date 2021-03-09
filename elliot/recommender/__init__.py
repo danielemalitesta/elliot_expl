@@ -19,7 +19,7 @@ from .visual_recommenders import VBPR, DeepStyle, ACF, DVBPR, VNPR
 from .NN import ItemKNN, UserKNN, AttributeItemKNN, AttributeUserKNN
 from .neural import DeepFM, DMF, NeuMF, NFM, GMF, NAIS, UserAutoRec, ItemAutoRec, ConvNeuMF, WideAndDeep, ConvMF, NPR
 from .content_based import VSM
-# from .custom import FashionExpl
+from .custom import FashionExpl
 from .algebric import SlopeOne
 from .adversarial import AMF, AMR
 from .gan import IRGAN, CFGAN

@@ -41,13 +41,27 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
             ("_factors", "factors", "factors", 100, None, None),
             ("_learning_rate", "lr", "lr", 0.0005, None, None),
             ("_l_w", "l_w", "l_w", 0.000025, None, None),
+            ("_l_color", "l_color", "l_color", 0.000025, None, None),
+            ("_l_shape", "l_shape", "l_shape", 0.000025, None, None),
+            ("_l_att", "l_att", "l_att", 0.000025, None, None),
+            ("_l_out", "l_out", "l_out", 0.000025, None, None),
             ("_mlp_color", "mlp_color", "mlp_color", "(64,)", lambda x: list(make_tuple(x)),
+             lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
+            ("_cnn_channels", "cnn_channels", "cnn_channels", "(32,)", lambda x: list(make_tuple(str(x))),
+             lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
+            ("_cnn_kernels", "cnn_kernels", "cnn_kernels", "((3,3),)", lambda x: list(make_tuple(str(x))),
+             lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
+            ("_cnn_strides", "cnn_strides", "cnn_strides", "((1,1),)", lambda x: list(make_tuple(str(x))),
+             lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
+            ("_mlp_cnn", "mlp_cnn", "mlp_cnn", "(64,)", lambda x: list(make_tuple(x)),
              lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
             ("_mlp_att", "mlp_att", "mlp_att", "(64,)", lambda x: list(make_tuple(x)),
              lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
             ("_mlp_out", "mlp_out", "mlp_out", "(64,)", lambda x: list(make_tuple(x)),
              lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
-            ("_dropout", "dropout", "drop", 0.2, None, None)
+            ("_dropout", "dropout", "drop", 0.2, None, None),
+            ("_item_feat_agg", "item_feat_agg", "item_feat_aggr", "multiplication", None, None),
+            ("_sampler", "sampler", "sampler", "pairwise", None, None)
         ]
 
         self.autoset_params()
