@@ -1,0 +1,201 @@
+experiment:
+  data_config:
+    strategy: fixed
+    dataloader: VisualLoader
+    dataset_path: ../data/{0}/trainingset.tsv
+    train_path: ../data/{0}/trainingset.tsv
+    validation_path: ../data/{0}/validationset.tsv
+    test_path: ../data/{0}/testset.tsv
+    side_information:
+      visual_features: ../data/{0}/original/cnn_features_vgg19_fc2.npy
+      visual_pca_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
+      visual_feat_map_features: ../data/{0}/original/cnn_features_vgg19_block5_pool.npy
+      visual_color_features: ../data/{0}/original/color_features_bins8.npy
+      visual_class_features: ../data/{0}/original/category_features_vgg19_fc2_pca128.npy
+      item_mapping: ../data/{0}/visual_feats.tsv
+      images_src_folder: ../data/{0}/original/images/
+      shapes_src_folder: ../data/{0}/original/shapes/
+      colors_src_folder: ../data/{0}/original/colors/
+      classes_src_folder: ../data/{0}/original/classes/
+      output_image_size: (224,224)
+      output_shape_size: (224,224)
+  dataset: amazon_baby
+  top_k: 100
+#  config_test: True
+  evaluation:
+    cutoffs: [10, 50, 100]
+    simple_metrics: [Precision, Recall, nDCG, HR, F1, MRR, MAP, ItemCoverage, Gini, EFD, EPC, ACLT, APLT, ARP]
+    relevance_threshold: 1
+    paired_ttest: True
+  gpu: -1
+  models:
+#    Random:
+#      meta:
+#        save_recs: True
+#    MostPop:
+#      meta:
+#        save_recs: True
+#    ItemKNN:
+#      meta:
+#        save_recs: True
+#        hyper_max_evals: 5
+#        hyper_opt_alg: tpe
+#      neighbors: [20, 50, 100, 250, 500, 1000]
+#      similarity: cosine
+#      implementation: aiolli
+#    UserKNN:
+#      meta:
+#        save_recs: True
+#        hyper_max_evals: 5
+#        hyper_opt_alg: tpe
+#      neighbors: [20, 50, 100, 250, 500, 1000]
+#      similarity: cosine
+#      implementation: aiolli
+#    BPRMF_batch:
+#      meta:
+#        hyper_max_evals: 5
+#        hyper_opt_alg: tpe
+#        validation_rate: 10
+#        verbose: True
+#        save_weights: False
+#        save_recs: True
+#        validation_metric: nDCG
+#        restore_epoch: -1
+#      lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+#      epochs: 300
+#      batch_size: [256, 512]
+#      factors: [32, 64, 128]
+#      l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+#      l_b: 0
+#    NeuMF:
+#      meta:
+#        hyper_max_evals: 5
+#        hyper_opt_alg: tpe
+#        validation_rate: 10
+#        verbose: True
+#        save_weights: False
+#        save_recs: True
+#        validation_metric: nDCG
+#        restore_epoch: -1
+#      lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+#      epochs: 300
+#      batch_size: [256, 512]
+#      mf_factors: [32, 64, 128]
+#      mlp_factors: [32, 64, 128]
+#      mlp_hidden_size: [(32, 16, 8), (64, 32, 16)]
+#      prob_keep_dropout: [uniform, 0, 1]
+#      is_mf_train: True
+#      is_mlp_train: True
+#    VBPR:
+#      meta:
+#        hyper_max_evals: 5
+#        hyper_opt_alg: tpe
+#        validation_rate: 10
+#        verbose: True
+#        save_weights: False
+#        save_recs: True
+#        validation_metric: nDCG
+#        restore_epoch: -1
+#      lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+#      epochs: 300
+#      factors: [32, 64, 128]
+#      factors_d: 20
+#      batch_size: [256, 512]
+#      l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+#      l_b: 0
+#      l_e: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+#    DeepStyle:
+#      meta:
+#        hyper_max_evals: 5
+#        hyper_opt_alg: tpe
+#        validation_rate: 10
+#        verbose: True
+#        save_weights: False
+#        save_recs: True
+#        validation_metric: nDCG
+#        restore_epoch: -1
+#      lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+#      epochs: 300
+#      factors: [32, 64, 128]
+#      batch_size: [256, 512]
+#      l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+#    ACF:
+#      meta:
+#        hyper_max_evals: 5
+#        hyper_opt_alg: tpe
+#        validation_rate: 10
+#        verbose: True
+#        save_weights: False
+#        save_recs: True
+#        validation_metric: nDCG
+#        restore_epoch: -1
+#      lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+#      epochs: 300
+#      factors: [32, 64, 128]
+#      batch_size: [256, 512]
+#      l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+#      layers_component: [(64, 1), (128, 64, 1)]
+#      layers_item: [(64, 1), (128, 64, 1)]
+#    DVBPR:
+#      meta:
+#        hyper_max_evals: 5
+#        hyper_opt_alg: tpe
+#        validation_rate: 10
+#        verbose: True
+#        save_weights: False
+#        save_recs: True
+#        validation_metric: nDCG
+#        restore_epoch: -1
+#      lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+#      epochs: 300
+#      factors: [32, 64, 128]
+#      batch_size: [256, 512]
+#      lambda_1: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0, 1.0]
+#      lambda_2: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0, 1.0]
+#    VNPR:
+#      meta:
+#        hyper_max_evals: 5
+#        hyper_opt_alg: tpe
+#        validation_rate: 10
+#        verbose: True
+#        save_weights: False
+#        save_recs: True
+#        validation_metric: nDCG
+#        restore_epoch: -1
+#      lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+#      epochs: 300
+#      mf_factors: [32, 64, 128]
+#      batch_size: [256, 512]
+#      mlp_hidden_size: (128, 64, 1)
+#      prob_keep_dropout: [uniform, 0, 1]
+#      l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+#      l_v: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+    FashionExpl:
+      meta:
+        hyper_max_evals: 5
+        hyper_opt_alg: tpe
+        validation_rate: 10
+        verbose: True
+        save_weights: False
+        save_recs: True
+        validation_metric: nDCG
+        restore_epoch: -1
+      lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+      epochs: 300
+      batch_size: [256, 512]
+      factors: 128
+      l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+      l_color: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+      l_shape: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+      l_att: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+      l_out: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+      mlp_color: [(32, 16, 1), (64, 16)]
+      mlp_att: [(32, 16, 8), (64, 32, 16)]
+      mlp_out: [(32, 16, 8), (64, 32, 16)]
+      mlp_cnn: [(32, 16, 8), (64, 32, 16)]
+      cnn_channels: [(32, 16, 8), (64, 32, 16)]
+      cnn_kernels: [(32, 16, 8), (64, 32, 16)]
+      cnn_strides: (1, 1)
+      item_feat_agg: multiplication
+      sampler: pairwise
+      dropout: [uniform, 0, 1]

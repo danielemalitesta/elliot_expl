@@ -1,3 +1,3 @@
 from elliot.run import run_experiment
 
-run_experiment("config_files/baselines.yml")
+run_experiment("config_files/custom.yml")
