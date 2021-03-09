@@ -21,7 +21,7 @@ experiment:
 #      output_shape_size: (224,224)
   dataset: amazon_baby
   top_k: 100
-  config_test: True
+#  config_test: True
   evaluation:
     cutoffs: [10, 50, 100]
     simple_metrics: [Precision, Recall, nDCG, HR, F1, MRR, MAP, ItemCoverage, Gini, EFD, EPC, ACLT, APLT, ARP]
