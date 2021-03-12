@@ -29,9 +29,9 @@ experiment:
     paired_ttest: True
   gpu: -1
   models:
-#    Random:
-#      meta:
-#        save_recs: True
+    Random:
+      meta:
+        save_recs: True
     MostPop:
       meta:
         save_recs: True
