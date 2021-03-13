@@ -297,16 +297,11 @@ class FashionExpl_model(keras.Model):
         return loss
 
     @tf.function
-    def predict_batch(self, start, stop, color, shape, class_):
+    def predict_batch(self, start, stop, item, color, shape, class_):
         gamma_u = self.Gu[start:stop]
         color_i = tf.expand_dims(color, 1)
         shape_i = tf.expand_dims(shape, 1)
         class_i = tf.expand_dims(class_, 1)
-
-        print(gamma_u.shape)
-        print(color_i.shape)
-        print(shape_i.shape)
-        print(class_i.shape)
 
         all_attention = self.propagate_attention(gamma_u, color_i, shape_i, class_i)
         attentive_features = tf.reduce_sum(tf.multiply(
@@ -314,14 +309,11 @@ class FashionExpl_model(keras.Model):
             tf.concat([color_i, shape_i, class_i], axis=1)
         ), axis=1)
 
-        print(all_attention.shape)
-        print(attentive_features.shape)
-
         # score prediction
         if self._out_feat_agg == 'multiplication':
-            gamma_i = self.Gi * attentive_features
+            gamma_i = item * attentive_features
         elif self._out_feat_agg == 'addition':
-            gamma_i = self.Gi + attentive_features
+            gamma_i = item + attentive_features
         else:
             raise NotImplementedError('This aggregation method has not been implemented yet!')
         xui = self.mlp_output(tf.concat([gamma_u, gamma_i], axis=1), training=False)

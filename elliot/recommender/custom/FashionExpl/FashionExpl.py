@@ -200,6 +200,8 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
             for _ in range(item_batches):
                 p, a = self._model.predict_batch(
                     offset, offset_stop,
+                    self._model.Gi[batch_size_count:batch_size_count + (
+                            offset_stop - offset)],
                     color_features[batch_size_count:batch_size_count + (
                             offset_stop - offset)],
                     shape_features[batch_size_count:batch_size_count + (
@@ -215,6 +217,8 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
             for u_ in range(offset_stop - offset):
                 for i_ in range(item_reminder):
                     p, a = self._model.predict_batch(u_, u_ + 1,
+                                                     self._model.Gi[batch_size_count + (
+                                                                 i_ + 1)],
                                                      color_features[
                                                          batch_size_count + (
                                                                  i_ + 1)],
