@@ -161,7 +161,8 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                             if self._save_recs:
                                 store_recommendation(recs,
                                                      self._config.path_output_rec_result + f"{self.name}-it:{it + 1}.tsv")
-                            with open(self._config.path_output_rec_result + f"{self.name}-it:{it + 1}_attention.pkl", "w") as f:
+                            with open(self._config.path_output_rec_result + f"{self.name}-it:{it + 1}_attention.pkl",
+                                      "w") as f:
                                 pickle.dump(self._attention_dict, f)
                     it += 1
                     steps = 0
@@ -182,12 +183,50 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
             class_features[steps:steps + output_col.shape[0]] = class_.numpy()
             steps += output_col.shape[0]
 
+        color_features = tf.Variable(color_features, dtype=tf.float32)
+        shape_features = tf.Variable(shape_features, dtype=tf.float32)
+        class_features = tf.Variable(class_features, dtype=tf.float32)
+
         for index, offset in enumerate(range(0, self._num_users, self._params.batch_size)):
             offset_stop = min(offset + self._params.batch_size, self._num_users)
-            predictions, attention = self._model.predict_batch(offset, offset_stop,
-                                                               tf.Variable(color_features, dtype=tf.float32),
-                                                               tf.Variable(shape_features, dtype=tf.float32),
-                                                               tf.Variable(class_features, dtype=tf.float32))
+
+            item_batches = self._num_items // (offset_stop - offset)
+            item_reminder = self._num_items % (offset_stop - offset)
+
+            # here, user and item batches share the same batch size
+            batch_size_count = 0
+            predictions = np.empty((offset_stop - offset, self._num_items))
+            attention = np.empty((offset_stop - offset, self._num_items, 3))
+            for _ in range(item_batches):
+                p, a = self._model.predict_batch(
+                    offset, offset_stop,
+                    color_features[batch_size_count:batch_size_count + (
+                            offset_stop - offset)],
+                    shape_features[batch_size_count:batch_size_count + (
+                            offset_stop - offset)],
+                    class_features[batch_size_count:batch_size_count + (
+                            offset_stop - offset)]
+                )
+                predictions[:, batch_size_count:batch_size_count + (offset_stop - offset)], \
+                    attention[:, batch_size_count:batch_size_count + (offset_stop - offset), :] = p.numpy(), a.numpy()
+                batch_size_count += (offset_stop - offset)
+
+            # here, user and item batches don't share the same batch size anymore
+            for u_ in range(offset_stop - offset):
+                for i_ in range(item_reminder):
+                    p, a = self._model.predict_batch(u_, u_ + 1,
+                                                     color_features[
+                                                         batch_size_count + (
+                                                                 i_ + 1)],
+                                                     shape_features[
+                                                         batch_size_count + (
+                                                                 i_ + 1)],
+                                                     class_features[
+                                                         batch_size_count + (
+                                                                 i_ + 1)])
+                    predictions[u_, batch_size_count + (i_ + 1)], \
+                        attention[u_, batch_size_count + (i_ + 1), :] = p.numpy(), a.numpy()
+
             mask = self.get_train_mask(offset, offset_stop)
             v, i = self._model.get_top_k(predictions, mask, k=k)
             items_ratings_pair = [list(zip(map(self._data.private_items.get, u_list[0]), u_list[1]))
