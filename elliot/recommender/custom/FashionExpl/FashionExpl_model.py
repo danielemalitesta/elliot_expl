@@ -317,7 +317,9 @@ class FashionExpl_model(keras.Model):
         else:
             raise NotImplementedError('This aggregation method has not been implemented yet!')
         xui = self.mlp_output(tf.concat([gamma_u, gamma_i], axis=1), training=False)
-        return xui, tf.expand_dims(all_attention, -1)
+        print(xui.shape)
+        print(all_attention.shape)
+        return xui, all_attention
 
     @tf.function
     def get_top_k(self, preds, train_mask, k=100):
