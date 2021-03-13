@@ -189,47 +189,16 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
 
         for index, offset in enumerate(range(0, self._num_users, self._params.batch_size)):
             offset_stop = min(offset + self._params.batch_size, self._num_users)
-
-            item_batches = self._num_items // (offset_stop - offset)
-            item_reminder = self._num_items % (offset_stop - offset)
-
-            # here, user and item batches share the same batch size
-            batch_size_count = 0
             predictions = np.empty((offset_stop - offset, self._num_items))
             attention = np.empty((offset_stop - offset, self._num_items, 3))
-            for _ in range(item_batches):
-                p, a = self._model.predict_batch(
-                    offset, offset_stop,
-                    self._model.Gi[batch_size_count:batch_size_count + (
-                            offset_stop - offset)],
-                    color_features[batch_size_count:batch_size_count + (
-                            offset_stop - offset)],
-                    shape_features[batch_size_count:batch_size_count + (
-                            offset_stop - offset)],
-                    class_features[batch_size_count:batch_size_count + (
-                            offset_stop - offset)]
-                )
-                predictions[:, batch_size_count:batch_size_count + (offset_stop - offset)], \
-                    attention[:, batch_size_count:batch_size_count + (offset_stop - offset), :] = p.numpy(), a.numpy()
-                batch_size_count += (offset_stop - offset)
-
-            # here, user and item batches don't share the same batch size anymore
-            for u_ in range(offset_stop - offset):
-                for i_ in range(item_reminder):
-                    p, a = self._model.predict_batch(u_, u_ + 1,
-                                                     self._model.Gi[batch_size_count + (
-                                                                 i_ + 1)],
-                                                     color_features[
-                                                         batch_size_count + (
-                                                                 i_ + 1)],
-                                                     shape_features[
-                                                         batch_size_count + (
-                                                                 i_ + 1)],
-                                                     class_features[
-                                                         batch_size_count + (
-                                                                 i_ + 1)])
-                    predictions[u_, batch_size_count + (i_ + 1)], \
-                        attention[u_, batch_size_count + (i_ + 1), :] = p.numpy(), a.numpy()
+            for i_ in range(self._num_items):
+                p, a = self._model.predict_batch(offset, offset_stop,
+                                                 tf.repeat(self._model.Gi[i_], repeats=(offset_stop - offset), axis=0),
+                                                 tf.repeat(color_features[i_], repeats=(offset_stop - offset), axis=0),
+                                                 tf.repeat(shape_features[i_], repeats=(offset_stop - offset), axis=0),
+                                                 tf.repeat(class_features[i_], repeats=(offset_stop - offset), axis=0))
+                predictions[offset:offset_stop, i_], \
+                    attention[offset:offset_stop, i_, :] = p.numpy(), a.numpy()
 
             mask = self.get_train_mask(offset, offset_stop)
             v, i = self._model.get_top_k(predictions, mask, k=k)
