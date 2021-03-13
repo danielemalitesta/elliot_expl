@@ -162,7 +162,7 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                                 store_recommendation(recs,
                                                      self._config.path_output_rec_result + f"{self.name}-it:{it + 1}.tsv")
                             with open(self._config.path_output_rec_result + f"{self.name}-it:{it + 1}_attention.pkl",
-                                      "w") as f:
+                                      "wb") as f:
                                 pickle.dump(self._attention_dict, f)
                     it += 1
                     steps = 0
