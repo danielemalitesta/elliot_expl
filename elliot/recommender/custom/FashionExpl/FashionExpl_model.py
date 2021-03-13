@@ -303,11 +303,19 @@ class FashionExpl_model(keras.Model):
         shape_i = tf.expand_dims(shape, 1)
         class_i = tf.expand_dims(class_, 1)
 
+        print(gamma_u.shape)
+        print(color_i.shape)
+        print(shape_i.shape)
+        print(class_i.shape)
+
         all_attention = self.propagate_attention(gamma_u, color_i, shape_i, class_i)
         attentive_features = tf.reduce_sum(tf.multiply(
             all_attention,
             tf.concat([color_i, shape_i, class_i], axis=1)
         ), axis=1)
+
+        print(all_attention.shape)
+        print(attentive_features.shape)
 
         # score prediction
         if self._out_feat_agg == 'multiplication':
