@@ -316,9 +316,7 @@ class FashionExpl_model(keras.Model):
             gamma_i = item + attentive_features
         else:
             raise NotImplementedError('This aggregation method has not been implemented yet!')
-        xui = self.mlp_output(tf.concat([gamma_u, gamma_i], axis=1), training=False)
-        print(xui.shape)
-        print(all_attention.shape)
+        xui = tf.squeeze(self.mlp_output(tf.concat([gamma_u, gamma_i], axis=1), training=False))
         return xui, all_attention
 
     @tf.function
