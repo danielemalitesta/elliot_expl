@@ -200,8 +200,8 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                                                  tf.repeat(tf.expand_dims(color_features[i_], 0), repeats=(offset_stop - offset), axis=0),
                                                  tf.repeat(tf.expand_dims(shape_features[i_], 0), repeats=(offset_stop - offset), axis=0),
                                                  tf.repeat(tf.expand_dims(class_features[i_], 0), repeats=(offset_stop - offset), axis=0))
-                predictions[offset:offset_stop, i_], \
-                    attention[offset:offset_stop, i_, :] = p.numpy(), a.numpy()
+                predictions[0:(offset_stop - offset), i_], \
+                    attention[0:(offset_stop - offset), i_, :] = p.numpy(), a.numpy()
 
             mask = self.get_train_mask(offset, offset_stop)
             v, i = self._model.get_top_k(predictions, mask, k=k)
