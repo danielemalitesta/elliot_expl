@@ -193,10 +193,10 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
             attention = np.empty((offset_stop - offset, self._num_items, 3))
             for i_ in range(self._num_items):
                 p, a = self._model.predict_batch(offset, offset_stop,
-                                                 tf.repeat(self._model.Gi[i_], repeats=(offset_stop - offset), axis=0),
-                                                 tf.repeat(color_features[i_], repeats=(offset_stop - offset), axis=0),
-                                                 tf.repeat(shape_features[i_], repeats=(offset_stop - offset), axis=0),
-                                                 tf.repeat(class_features[i_], repeats=(offset_stop - offset), axis=0))
+                                                 tf.repeat(tf.expand_dims(self._model.Gi[i_], 0), repeats=(offset_stop - offset), axis=0),
+                                                 tf.repeat(tf.expand_dims(color_features[i_], 0), repeats=(offset_stop - offset), axis=0),
+                                                 tf.repeat(tf.expand_dims(shape_features[i_], 0), repeats=(offset_stop - offset), axis=0),
+                                                 tf.repeat(tf.expand_dims(class_features[i_], 0), repeats=(offset_stop - offset), axis=0))
                 predictions[offset:offset_stop, i_], \
                     attention[offset:offset_stop, i_, :] = p.numpy(), a.numpy()
 
