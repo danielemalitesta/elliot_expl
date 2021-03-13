@@ -12,6 +12,7 @@ from ast import literal_eval as make_tuple
 
 import numpy as np
 import tensorflow as tf
+import pickle
 from tqdm import tqdm
 
 from elliot.recommender.base_recommender_model import init_charger
@@ -39,23 +40,28 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
         self._random = np.random
 
         self._params_list = [
-            ("_factors", "factors", "factors", 100, None, None),
+            ("_factors", "factors", "f", 100, int, None),
             ("_learning_rate", "lr", "lr", 0.0005, None, None),
-            ("_l_w", "l_w", "l_w", 0.000025, None, None),
-            ("_l_color", "l_color", "l_color", 0.000025, None, None),
-            ("_l_shape", "l_shape", "l_shape", 0.000025, None, None),
-            ("_l_att", "l_att", "l_att", 0.000025, None, None),
-            ("_l_out", "l_out", "l_out", 0.000025, None, None),
-            ("_mlp_color", "mlp_color", "mlp_color", "(64,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
-            ("_cnn_channels", "cnn_channels", "cnn_channels", 32, None, None),
-            ("_cnn_kernels", "cnn_kernels", "cnn_kernels", 3, None, None),
-            ("_cnn_strides", "cnn_strides", "cnn_strides", 1, None, None),
-            ("_mlp_cnn", "mlp_cnn", "mlp_cnn", "(64,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
-            ("_mlp_att", "mlp_att", "mlp_att", "(64,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
-            ("_mlp_out", "mlp_out", "mlp_out", "(64,1)", lambda x: list(make_tuple(str(x))), lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
-            ("_dropout", "dropout", "drop", 0.2, None, None),
-            ("_item_feat_agg", "item_feat_agg", "item_feat_aggr", "multiplication", None, None),
-            ("_sampler_str", "sampler", "sampler", "pairwise", None, None)
+            ("_l_w", "l_w", "lw", 0.000025, None, None),
+            ("_l_color", "l_color", "lc", 0.000025, None, None),
+            ("_l_shape", "l_shape", "ls", 0.000025, None, None),
+            ("_l_att", "l_att", "la", 0.000025, None, None),
+            ("_l_out", "l_out", "lo", 0.000025, None, None),
+            ("_mlp_color", "mlp_color", "mlpc", "(64,1)", lambda x: list(make_tuple(str(x))),
+             lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
+            ("_cnn_channels", "cnn_channels", "cnnch", 32, None, None),
+            ("_cnn_kernels", "cnn_kernels", "cnnk", 3, None, None),
+            ("_cnn_strides", "cnn_strides", "cnns", 1, None, None),
+            ("_mlp_cnn", "mlp_cnn", "mlpc", "(64,1)", lambda x: list(make_tuple(str(x))),
+             lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
+            ("_mlp_att", "mlp_att", "mlpa", "(64,1)", lambda x: list(make_tuple(str(x))),
+             lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
+            ("_mlp_out", "mlp_out", "mlpo", "(64,1)", lambda x: list(make_tuple(str(x))),
+             lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
+            ("_dropout", "dropout", "d", 0.2, None, None),
+            ("_att_feat_agg", "att_feat_agg", "afa", "multiplication", None, None),
+            ("_out_feat_agg", "out_feat_agg", "ofa", "multiplication", None, None),
+            ("_sampler_str", "sampler", "s", "pairwise", None, None)
         ]
 
         self.autoset_params()
@@ -64,6 +70,9 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
             self._batch_size = self._data.transactions
 
         item_indices = [self._data.item_mapping[self._data.private_items[item]] for item in range(self._num_items)]
+
+        # dictionary with key (user) and value (attention weights for user's positive items)
+        self._attention_dict = dict()
 
         if self._sampler_str == 'pairwise':
             self._sampler = pairpfs.Sampler(self._data.i_train_dict,
@@ -97,7 +106,8 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                                         self._cnn_channels,
                                         self._cnn_kernels,
                                         self._cnn_strides,
-                                        self._item_feat_agg,
+                                        self._att_feat_agg,
+                                        self._out_feat_agg,
                                         self._sampler_str,
                                         self._dropout,
                                         self._learning_rate,
@@ -143,7 +153,7 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                         self.logger.info(f'Epoch {(it + 1)}/{self._epochs} loss {loss / steps:.3f}')
 
                         if self._results[-1][self._validation_k]["val_results"][
-                           self._validation_metric] > best_metric_value:
+                            self._validation_metric] > best_metric_value:
                             best_metric_value = self._results[-1][self._validation_k]["val_results"][
                                 self._validation_metric]
                             if self._save_weights:
@@ -151,18 +161,40 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                             if self._save_recs:
                                 store_recommendation(recs,
                                                      self._config.path_output_rec_result + f"{self.name}-it:{it + 1}.tsv")
+                            with open(self._config.path_output_rec_result + f"{self.name}-it:{it + 1}_attention.pkl", "w") as f:
+                                pickle.dump(self._attention_dict, f)
                     it += 1
                     steps = 0
                     loss = 0
 
     def get_recommendations(self, k: int = 100):
         predictions_top_k = {}
+        steps = 0
+        color_features = np.empty((self._num_items, self._factors))
+        shape_features = np.empty((self._num_items, self._factors))
+        class_features = np.empty((self._num_items, self._factors))
+        for batch in self._next_eval_batch:
+            item, shape, col, class_ = batch
+            output_col = self._model.color_encoder(col, training=False)
+            output_shape = self._model.shape_encoder(shape, training=False)
+            color_features[steps:steps + output_col.shape[0]] = output_col.numpy()
+            shape_features[steps:steps + output_shape.shape[0]] = output_shape.numpy()
+            class_features[steps:steps + output_col.shape[0]] = class_.numpy()
+            steps += output_col.shape[0]
+
         for index, offset in enumerate(range(0, self._num_users, self._params.batch_size)):
             offset_stop = min(offset + self._params.batch_size, self._num_users)
-            predictions = self._model.predict(offset, offset_stop)
+            predictions, attention = self._model.predict_batch(offset, offset_stop,
+                                                               tf.Variable(color_features, dtype=tf.float32),
+                                                               tf.Variable(shape_features, dtype=tf.float32),
+                                                               tf.Variable(class_features, dtype=tf.float32))
             mask = self.get_train_mask(offset, offset_stop)
             v, i = self._model.get_top_k(predictions, mask, k=k)
             items_ratings_pair = [list(zip(map(self._data.private_items.get, u_list[0]), u_list[1]))
                                   for u_list in list(zip(i.numpy(), v.numpy()))]
             predictions_top_k.update(dict(zip(range(offset, offset_stop), items_ratings_pair)))
+            self._attention_dict = {**self._attention_dict,
+                                    **{u: attention[u, self._data.sp_i_train.toarray()[u] == 1]
+                                       for u in range(offset_stop - offset)}}
+
         return predictions_top_k

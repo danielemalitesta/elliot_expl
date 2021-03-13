@@ -190,12 +190,13 @@ experiment:
       l_att: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
       l_out: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
       mlp_color: [(128,), (256, 128,)]
-      mlp_att: [(128,), (256, 128,)]
+      mlp_att: [(128, 1), (256, 128, 1)]
       mlp_out: [(128,), (256, 128,)]
       mlp_cnn: [(128,), (256, 128,)]
       cnn_channels: [32, 64]
       cnn_kernels: [3, 5]
       cnn_strides: 1
-      item_feat_agg: multiplication
+      att_feat_agg: multiplication
+      out_feat_agg: multiplication
       sampler: pairwise
       dropout: [uniform, 0, 1]

@@ -21,7 +21,8 @@ class FashionExpl_model(keras.Model):
                  cnn_channels=64,
                  cnn_kernels=3,
                  cnn_strides=1,
-                 item_feat_agg='multiplication',
+                 att_feat_agg='multiplication',
+                 out_feat_agg='multiplication',
                  sampler_str='pairwise',
                  dropout=0.2,
                  learning_rate=0.001,
@@ -44,7 +45,8 @@ class FashionExpl_model(keras.Model):
         self._cnn_channels = cnn_channels
         self._cnn_kernels = cnn_kernels
         self._cnn_strides = cnn_strides
-        self._item_feat_agg = item_feat_agg
+        self._att_feat_agg = att_feat_agg
+        self._out_feat_agg = out_feat_agg
         self._sampler_str = sampler_str
         self.l_w = l_w
         self._l_color = l_color
@@ -97,13 +99,25 @@ class FashionExpl_model(keras.Model):
         self.mlp_output.add(keras.layers.Dropout(self._dropout))
         for units in self._mlp_out:
             self.mlp_output.add(keras.layers.Dense(units, activation='relu'))
-        self.mlp_output.add(keras.layers.Dense(units=1, use_bias=False))
+        if self._sampler_str == 'pointwise':
+            self.mlp_output.add(keras.layers.Dense(units=1, use_bias=False, activation='sigmoid'))
+        elif self._sampler_str == 'pairwise':
+            self.mlp_output.add(keras.layers.Dense(units=1, use_bias=False, activation='linear'))
+        else:
+            raise NotImplementedError('This sampler type has not been implemented for this model yet!')
 
     def create_attention_weights(self):
+        if self._att_feat_agg == 'multiplication' or self._att_feat_agg == 'addition':
+            input_shape = self._factors
+        elif self._att_feat_agg == 'concatenation':
+            input_shape = 2 * self._factors
+        else:
+            raise NotImplementedError('This aggregation method has not been implemented yet!')
+
         for layer in range(len(self._mlp_att)):
             if layer == 0:
                 self.attention_network['W_{}'.format(layer + 1)] = tf.Variable(
-                    self.initializer_attentive(shape=[self._factors, self._mlp_att[layer]]),
+                    self.initializer_attentive(shape=[input_shape, self._mlp_att[layer]]),
                     name='W_{}'.format(layer + 1),
                     dtype=tf.float32
                 )
@@ -114,7 +128,7 @@ class FashionExpl_model(keras.Model):
                 )
             else:
                 self.attention_network['W_{}'.format(layer + 1)] = tf.Variable(
-                    self.initializer_attentive(shape=[self._mlp_att[layer - 1], self.attention_layers[layer]]),
+                    self.initializer_attentive(shape=[self._mlp_att[layer - 1], self._mlp_att[layer]]),
                     name='W_{}'.format(layer + 1),
                     dtype=tf.float32
                 )
@@ -124,16 +138,31 @@ class FashionExpl_model(keras.Model):
                     dtype=tf.float32
                 )
 
-    # @tf.function
+    @tf.function
     def propagate_attention(self, g_u, colors, shapes, classes):
         all_a_i_l = None
-        for layer in range(len(self.attention_layers)):
+        for layer in range(len(self._mlp_att)):
             if layer == 0:
-                all_a_i_l = tf.tensordot(
-                    tf.expand_dims(g_u, 1) * tf.concat([colors, shapes, classes], axis=1),
-                    self.attention_network['W_{}'.format(layer + 1)],
-                    axes=[[2], [0]]
-                ) + self.attention_network['b_{}'.format(layer + 1)]
+                if self._att_feat_agg == 'multiplication':
+                    all_a_i_l = tf.tensordot(
+                        tf.expand_dims(g_u, 1) * tf.concat([colors, shapes, classes], axis=1),
+                        self.attention_network['W_{}'.format(layer + 1)],
+                        axes=[[2], [0]]
+                    ) + self.attention_network['b_{}'.format(layer + 1)]
+                elif self._att_feat_agg == 'addition':
+                    all_a_i_l = tf.tensordot(
+                        tf.expand_dims(g_u, 1) + tf.concat([colors, shapes, classes], axis=1),
+                        self.attention_network['W_{}'.format(layer + 1)],
+                        axes=[[2], [0]]
+                    ) + self.attention_network['b_{}'.format(layer + 1)]
+                elif self._att_feat_agg == 'concatenation':
+                    all_a_i_l = tf.tensordot(
+                        tf.concat([tf.expand_dims(g_u, 1), tf.concat([colors, shapes, classes], axis=1)], axis=2),
+                        self.attention_network['W_{}'.format(layer + 1)],
+                        axes=[[2], [0]]
+                    ) + self.attention_network['b_{}'.format(layer + 1)]
+                else:
+                    raise NotImplementedError('This aggregation method has not been implemented yet!')
                 all_a_i_l = tf.nn.relu(all_a_i_l)
             else:
                 all_a_i_l = tf.tensordot(
@@ -145,25 +174,30 @@ class FashionExpl_model(keras.Model):
         all_alpha = tf.nn.softmax(all_a_i_l, axis=1)
         return all_alpha
 
-    # @tf.function
+    @tf.function
     def call(self, inputs, training=None, mask=None):
         user, item, shapes, colors, class_i = inputs
 
         gamma_u = tf.nn.embedding_lookup(self.Gu, user)
         gamma_i = tf.nn.embedding_lookup(self.Gi, item)
-        color_i = tf.expand_dims(self.color_encoder(colors), 1)
-        shape_i = tf.expand_dims(self.shape_encoder(shapes), 1)
+        color_i = tf.expand_dims(self.color_encoder(colors, training), 1)
+        shape_i = tf.expand_dims(self.shape_encoder(shapes, training), 1)
+        class_i = tf.expand_dims(class_i, 1)
 
         all_attention = self.propagate_attention(gamma_u, color_i, shape_i, class_i)
-        weighted_features = tf.reduce_sum(tf.multiply(
+        attentive_features = tf.reduce_sum(tf.multiply(
             all_attention,
             tf.concat([color_i, shape_i, class_i], axis=1)
         ), axis=1)
 
-        # INSERT MLP OUTPUT FOR SCORE PREDICTION
-
         # score prediction
-        xui = tf.reduce_sum(gamma_u * weighted_features * gamma_i, axis=1)
+        if self._out_feat_agg == 'multiplication':
+            gamma_i = gamma_i * attentive_features
+        elif self._out_feat_agg == 'addition':
+            gamma_i = gamma_i + attentive_features
+        else:
+            raise NotImplementedError('This aggregation method has not been implemented yet!')
+        xui = self.mlp_output(tf.concat([gamma_u, gamma_i], axis=1), training)
 
         return xui, \
                gamma_u, \
@@ -173,7 +207,7 @@ class FashionExpl_model(keras.Model):
                class_i, \
                all_attention
 
-    # @tf.function
+    @tf.function
     def train_step(self, batch):
         if self._sampler_str == 'pairwise':
             user, pos, shapes_pos, colors_pos, classes_pos, neg, shapes_neg, colors_neg, classes_neg = batch
@@ -227,7 +261,7 @@ class FashionExpl_model(keras.Model):
                     class_i, \
                     attention_pos = self(inputs=(user, item, im, col, class_), training=True)
 
-                loss = self.loss_pointwise(xui, pos_neg)
+                loss = self.loss_pointwise(pos_neg, xui)
 
                 # Regularization Component
                 reg_loss = self.l_w * tf.reduce_sum([tf.nn.l2_loss(gamma_u),
@@ -263,45 +297,27 @@ class FashionExpl_model(keras.Model):
         return loss
 
     @tf.function
-    def predict_all_batch(self, step, next_image):
-        all_predictions = []
-        all_attentions = []
-        reminder = self.num_items % step
+    def predict_batch(self, start, stop, color, shape, class_):
+        gamma_u = self.Gu[start:stop]
+        color_i = tf.expand_dims(color, 1)
+        shape_i = tf.expand_dims(shape, 1)
+        class_i = tf.expand_dims(class_, 1)
 
-        for u in range(self.num_users):
-            current_predictions = []
-            current_attentions = []
-            gamma_u = tf.repeat(tf.expand_dims(self.Gu[u], 0), repeats=step, axis=0)
-            for id_im, im, col, class_ in next_image:
-                if self.data.num_items == id_im.numpy()[-1] + 1:
-                    gamma_u = gamma_u[:reminder]
+        all_attention = self.propagate_attention(gamma_u, color_i, shape_i, class_i)
+        attentive_features = tf.reduce_sum(tf.multiply(
+            all_attention,
+            tf.concat([color_i, shape_i, class_i], axis=1)
+        ), axis=1)
 
-                gamma_i = tf.nn.embedding_lookup(self.Gi, id_im)
-                edges = tf.expand_dims(self.edges_encoder(im), 1)
-                colors = tf.expand_dims(self.color_encoder(col), 1)
-                classes = tf.expand_dims(self.class_encoder(class_), 1)
-                # attention network
-                attention_inputs = {
-                    'gamma_u': gamma_u,
-                    'colors': colors,
-                    'edges': edges,
-                    'classes': classes
-                }
-
-                all_attention = self.propagate_attention(attention_inputs)
-                weighted_features = tf.reduce_sum(tf.multiply(
-                    all_attention,
-                    tf.concat([colors, edges, classes], axis=1)
-                ), axis=1)
-
-                # score prediction
-                xui = tf.reduce_sum(gamma_u * weighted_features * gamma_i, axis=1)
-                current_predictions += xui.numpy().tolist()
-                current_attentions += all_attention.numpy()[:, :, 0].tolist()
-            all_predictions.append(current_predictions)
-            all_attentions.append(current_attentions)
-
-        return np.array(all_predictions), np.array(all_attentions)
+        # score prediction
+        if self._out_feat_agg == 'multiplication':
+            gamma_i = self.Gi * attentive_features
+        elif self._out_feat_agg == 'addition':
+            gamma_i = self.Gi + attentive_features
+        else:
+            raise NotImplementedError('This aggregation method has not been implemented yet!')
+        xui = self.mlp_output(tf.concat([gamma_u, gamma_i], axis=1), training=False)
+        return xui, all_attention
 
     @tf.function
     def get_top_k(self, preds, train_mask, k=100):
