@@ -317,7 +317,7 @@ class FashionExpl_model(keras.Model):
         else:
             raise NotImplementedError('This aggregation method has not been implemented yet!')
         xui = tf.squeeze(self.mlp_output(tf.concat([gamma_u, gamma_i], axis=1), training=False))
-        return xui, all_attention
+        return xui, tf.squeeze(all_attention)
 
     @tf.function
     def get_top_k(self, preds, train_mask, k=100):
