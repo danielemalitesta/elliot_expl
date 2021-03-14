@@ -161,7 +161,7 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                             if self._save_recs:
                                 store_recommendation(recs,
                                                      self._config.path_output_rec_result + f"{self.name}-it:{it + 1}.tsv")
-                            with open(self._config.path_output_rec_result + f"{self.name}-it:{it + 1}_attention.pkl",
+                            with open(self._config.path_output_rec_result + f"{self.name}_attention.pkl",
                                       "wb") as f:
                                 pickle.dump(self._attention_dict, f)
                     it += 1
@@ -197,8 +197,8 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                                                  tf.repeat(tf.expand_dims(color_features[i_], 0), repeats=(offset_stop - offset), axis=0),
                                                  tf.repeat(tf.expand_dims(shape_features[i_], 0), repeats=(offset_stop - offset), axis=0),
                                                  tf.repeat(tf.expand_dims(class_features[i_], 0), repeats=(offset_stop - offset), axis=0))
-                predictions[0:(offset_stop - offset), i_], \
-                    attention[0:(offset_stop - offset), i_, :] = p.numpy(), a.numpy()
+                predictions[:(offset_stop - offset), i_], \
+                    attention[:(offset_stop - offset), i_, :] = p.numpy(), a.numpy()
 
             mask = self.get_train_mask(offset, offset_stop)
             v, i = self._model.get_top_k(predictions, mask, k=k)
@@ -206,7 +206,7 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                                   for u_list in list(zip(i.numpy(), v.numpy()))]
             predictions_top_k.update(dict(zip(range(offset, offset_stop), items_ratings_pair)))
             self._attention_dict = {**self._attention_dict,
-                                    **{u: attention[u, self._data.sp_i_train.toarray()[u] == 1]
-                                       for u in range(offset_stop - offset)}}
+                                    **{u_abs: attention[u_rel, self._data.sp_i_train.toarray()[u_abs] == 1]
+                                       for u_abs, u_rel in zip(range(offset, offset_stop), range(offset_stop - offset))}}
 
         return predictions_top_k
