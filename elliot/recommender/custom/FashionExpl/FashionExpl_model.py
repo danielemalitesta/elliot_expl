@@ -162,7 +162,9 @@ class FashionExpl_model(keras.Model):
                     ) + self.attention_network['b_{}'.format(layer + 1)]
                 elif self._att_feat_agg == 'concatenation':
                     all_a_i_l = tf.tensordot(
-                        tf.concat([tf.expand_dims(g_u, 1), tf.concat([colors, shapes, classes], axis=1)], axis=2),
+                        tf.concat([tf.repeat(tf.expand_dims(g_u, 1), repeats=3, axis=1),
+                                   tf.concat([colors, shapes, classes], axis=1)],
+                                  axis=2),
                         self.attention_network['W_{}'.format(layer + 1)],
                         axes=[[2], [0]]
                     ) + self.attention_network['b_{}'.format(layer + 1)]
