@@ -80,7 +80,7 @@ class FashionExpl_model(keras.Model):
 
     def create_color_weights(self):
         self.color_encoder.add(keras.layers.Dropout(self._dropout))
-        for units in self._mlp_color:
+        for units in self._mlp_color[:-1]:
             self.color_encoder.add(keras.layers.Dense(units, activation='relu'))
         self.color_encoder.add(keras.layers.Dense(units=self._factors, use_bias=False))
 
@@ -93,16 +93,18 @@ class FashionExpl_model(keras.Model):
         self.shape_encoder.add(keras.layers.MaxPool2D(padding='same'))
         self.shape_encoder.add(keras.layers.GlobalAveragePooling2D())
         self.shape_encoder.add(keras.layers.Dropout(rate=self._dropout))
+        for units in self._mlp_cnn[:-1]:
+            self.shape_encoder.add(keras.layers.Dense(units=units, activation='relu'))
         self.shape_encoder.add(keras.layers.Dense(units=self._factors, use_bias=False))
 
     def create_output_weights(self):
         self.mlp_output.add(keras.layers.Dropout(self._dropout))
-        for units in self._mlp_out:
+        for units in self._mlp_out[:-1]:
             self.mlp_output.add(keras.layers.Dense(units, activation='relu'))
         if self._sampler_str == 'pointwise':
-            self.mlp_output.add(keras.layers.Dense(units=1, use_bias=False, activation='sigmoid'))
+            self.mlp_output.add(keras.layers.Dense(units=self._mlp_out[-1], use_bias=False, activation='sigmoid'))
         elif self._sampler_str == 'pairwise':
-            self.mlp_output.add(keras.layers.Dense(units=1, use_bias=False, activation='linear'))
+            self.mlp_output.add(keras.layers.Dense(units=self._mlp_out[-1], use_bias=False, activation='linear'))
         else:
             raise NotImplementedError('This sampler type has not been implemented for this model yet!')
 
