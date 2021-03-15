@@ -172,7 +172,7 @@ experiment:
 #      l_v: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
     FashionExpl:
       meta:
-        hyper_max_evals: 50
+        hyper_max_evals: 20
         hyper_opt_alg: tpe
         validation_rate: 10
         verbose: True
@@ -182,7 +182,7 @@ experiment:
         restore_epoch: -1
       lr: [0.0001, 0.001, 0.01, 0.1]
       epochs: 300
-      batch_size: [256, 512]
+      batch_size: 512
       factors: 128
       l_w: [0.00001, 0.0001, 0.001, 0.01]
       mlp_color: [(128, 1), (256, 128, 1)]
@@ -195,6 +195,7 @@ experiment:
       att_feat_agg: [multiplication, addition, concatenation]
       out_feat_agg: [multiplication, addition]
       sampler: pairwise
+      temperature: [1.0, 10.0, 100.0]
       dropout: [0.4, 0.6]
 #    FashionExpl:
 #      meta:

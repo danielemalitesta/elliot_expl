@@ -55,6 +55,7 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
             ("_mlp_out", "mlp_out", "mlpo", "(64,1)", lambda x: list(make_tuple(str(x))),
              lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
             ("_dropout", "dropout", "d", 0.2, None, None),
+            ("_temperature", "temperature", "t", 1.0, None, None),
             ("_att_feat_agg", "att_feat_agg", "afa", "multiplication", None, None),
             ("_out_feat_agg", "out_feat_agg", "ofa", "multiplication", None, None),
             ("_sampler_str", "sampler", "s", "pairwise", None, None)
@@ -105,6 +106,7 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                                         self._att_feat_agg,
                                         self._out_feat_agg,
                                         self._sampler_str,
+                                        self._temperature,
                                         self._dropout,
                                         self._learning_rate,
                                         self._l_w,

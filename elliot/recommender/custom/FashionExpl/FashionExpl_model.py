@@ -24,6 +24,7 @@ class FashionExpl_model(keras.Model):
                  att_feat_agg='multiplication',
                  out_feat_agg='multiplication',
                  sampler_str='pairwise',
+                 temperature=1.0,
                  dropout=0.2,
                  learning_rate=0.001,
                  l_w=0,
@@ -44,6 +45,7 @@ class FashionExpl_model(keras.Model):
         self._att_feat_agg = att_feat_agg
         self._out_feat_agg = out_feat_agg
         self._sampler_str = sampler_str
+        self._temperature = temperature
         self.l_w = l_w
         self._learning_rate = learning_rate
         self._num_items = num_items
@@ -170,7 +172,7 @@ class FashionExpl_model(keras.Model):
                     axes=[[2], [0]]
                 ) + self.attention_network['b_{}'.format(layer + 1)]
 
-        all_alpha = tf.nn.softmax(all_a_i_l, axis=1)
+        all_alpha = tf.nn.softmax(all_a_i_l / self._temperature, axis=1)
         return all_alpha
 
     @tf.function
