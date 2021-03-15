@@ -43,10 +43,6 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
             ("_factors", "factors", "f", 100, int, None),
             ("_learning_rate", "lr", "lr", 0.0005, None, None),
             ("_l_w", "l_w", "lw", 0.000025, None, None),
-            ("_l_color", "l_color", "lc", 0.000025, None, None),
-            ("_l_shape", "l_shape", "ls", 0.000025, None, None),
-            ("_l_att", "l_att", "la", 0.000025, None, None),
-            ("_l_out", "l_out", "lo", 0.000025, None, None),
             ("_mlp_color", "mlp_color", "mlpc", "(64,1)", lambda x: list(make_tuple(str(x))),
              lambda x: self._batch_remove(str(x), " []").replace(",", "-")),
             ("_cnn_channels", "cnn_channels", "cnnch", 32, None, None),
@@ -112,10 +108,6 @@ class FashionExpl(RecMixin, BaseRecommenderModel):
                                         self._dropout,
                                         self._learning_rate,
                                         self._l_w,
-                                        self._l_color,
-                                        self._l_shape,
-                                        self._l_att,
-                                        self._l_out,
                                         self._num_users,
                                         self._num_items)
 

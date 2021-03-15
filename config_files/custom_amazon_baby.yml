@@ -172,7 +172,7 @@ experiment:
 #      l_v: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
     FashionExpl:
       meta:
-        hyper_max_evals: 5
+        hyper_max_evals: 50
         hyper_opt_alg: tpe
         validation_rate: 10
         verbose: True
@@ -180,26 +180,22 @@ experiment:
         save_recs: True
         validation_metric: nDCG
         restore_epoch: -1
-      lr: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1]
+      lr: [0.0001, 0.001, 0.01, 0.1]
       epochs: 300
       batch_size: [256, 512]
       factors: 128
-      l_w: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
-      l_color: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
-      l_shape: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
-      l_att: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
-      l_out: [0.00001, 0.0001, 0.001, 0.01, 0.1, 0]
+      l_w: [0.00001, 0.0001, 0.001, 0.01]
       mlp_color: [(128, 1), (256, 128, 1)]
       mlp_att: [(128, 1), (256, 128, 1)]
       mlp_out: [(128, 1), (256, 128, 1)]
       mlp_cnn: [(128, 1), (256, 1, 1)]
-      cnn_channels: [32, 64]
-      cnn_kernels: [3, 5]
+      cnn_channels: 32
+      cnn_kernels: 3
       cnn_strides: 1
       att_feat_agg: [multiplication, addition, concatenation]
       out_feat_agg: [multiplication, addition]
-      sampler: [pairwise, pointwise]
-      dropout: [uniform, 0, 0.6]
+      sampler: pairwise
+      dropout: [0.4, 0.6]
 #    FashionExpl:
 #      meta:
 #        validation_rate: 1
@@ -213,10 +209,6 @@ experiment:
 #      batch_size: 256
 #      factors: 128
 #      l_w: 0.00001
-#      l_color: 0.00001
-#      l_shape: 0.00001
-#      l_att: 0.00001
-#      l_out: 0.00001
 #      mlp_color: (128,)
 #      mlp_att: (128, 1)
 #      mlp_out: (128,)

@@ -27,10 +27,6 @@ class FashionExpl_model(keras.Model):
                  dropout=0.2,
                  learning_rate=0.001,
                  l_w=0,
-                 l_color=0,
-                 l_shape=0,
-                 l_att=0,
-                 l_out=0,
                  num_users=100,
                  num_items=100,
                  name="FashionExpl",
@@ -49,10 +45,6 @@ class FashionExpl_model(keras.Model):
         self._out_feat_agg = out_feat_agg
         self._sampler_str = sampler_str
         self.l_w = l_w
-        self._l_color = l_color
-        self._l_shape = l_shape
-        self._l_att = l_att
-        self._l_out = l_out
         self._learning_rate = learning_rate
         self._num_items = num_items
         self._num_users = num_users
