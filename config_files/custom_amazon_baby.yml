@@ -27,7 +27,7 @@ experiment:
     simple_metrics: [Precision, Recall, nDCG, HR, F1, MRR, MAP, ItemCoverage, Gini, EFD, EPC, ACLT, APLT, ARP]
     relevance_threshold: 1
     paired_ttest: True
-  gpu: 0
+  gpu: -1
   models:
 #    Random:
 #      meta:
